@@ -16,6 +16,7 @@ import {
 import { CalendarDays, LogOut, Plus, Search } from "lucide-react"
 import { DayCard } from "@/components/day-card"
 import { AddTaskModal } from "@/components/add-task-modal"
+import { API_ENDPOINTS } from "@/lib/api"  // ✅ Updated import
 
 interface User {
   id: string
@@ -65,7 +66,7 @@ export default function DashboardPage() {
 
   // 📦 Load tasks from backend
   const loadTasks = async (userId: string) => {
-    const res = await fetch(`http://localhost:8000/api/tasks/${userId}`)
+    const res = await fetch(`${API_ENDPOINTS.tasks}/${userId}`)
     const data = await res.json()
 
     const grouped: Record<string, Task[]> = {}
@@ -95,7 +96,7 @@ export default function DashboardPage() {
   const handleAddTasks = async (date: string, tasks: any[]) => {
     if (!user) return
 
-    await fetch("http://localhost:8000/api/tasks", {
+    await fetch(`${API_ENDPOINTS.tasks}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -110,7 +111,7 @@ export default function DashboardPage() {
 
   // ✅ Toggle task
   const handleToggleTask = async (_: string, taskId: string) => {
-    await fetch(`http://localhost:8000/api/tasks/${taskId}/toggle`, {
+    await fetch(`${API_ENDPOINTS.tasks}/${taskId}/toggle`, {
       method: "PATCH",
     })
     loadTasks(user!.id)
@@ -118,13 +119,13 @@ export default function DashboardPage() {
 
   // ❌ Delete task
   const handleDeleteTask = async (_: string, taskId: string) => {
-    await fetch(`http://localhost:8000/api/tasks/${taskId}`, {
+    await fetch(`${API_ENDPOINTS.tasks}/${taskId}`, {
       method: "DELETE",
     })
     loadTasks(user!.id)
   }
 
-  // ✏️ OPEN Edit modal (missing earlier)
+  // ✏️ OPEN Edit modal
   const handleEditTask = (cardDate: string, taskId: string) => {
     const card = dayCards.find((c) => c.date === cardDate)
     if (!card) return
@@ -144,7 +145,7 @@ export default function DashboardPage() {
   ) => {
     if (!editingTask) return
 
-    await fetch(`http://localhost:8000/api/tasks/${editingTask.taskId}`, {
+    await fetch(`${API_ENDPOINTS.tasks}/${editingTask.taskId}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text, startTime, endTime }),

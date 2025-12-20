@@ -10,6 +10,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { CalendarDays } from "lucide-react"
+import { API_ENDPOINTS } from "@/lib/api"
+
 
 export default function SignUpPage() {
   const router = useRouter()
@@ -36,7 +38,7 @@ export default function SignUpPage() {
     }
   
     try {
-      const res = await fetch("http://localhost:8000/api/auth/signup", {
+      const res = await fetch(API_ENDPOINTS.signup, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -10,6 +10,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { CalendarDays } from "lucide-react"
+import { API_ENDPOINTS } from "@/lib/api"
+
 
 export default function LoginPage() {
   const router = useRouter()
@@ -29,7 +31,7 @@ export default function LoginPage() {
     }
   
     try {
-      const res = await fetch("http://localhost:8000/api/auth/login", {
+      const res = await fetch(API_ENDPOINTS.login, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
