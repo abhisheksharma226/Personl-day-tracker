@@ -13,10 +13,11 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog"
-import { CalendarDays, LogOut, Plus, Search, Menu, X } from "lucide-react" // ✅ added Menu and X
+import { CalendarDays, LogOut, Plus, Search, Menu, X } from "lucide-react"
 import { DayCard } from "@/components/day-card"
 import { AddTaskModal } from "@/components/add-task-modal"
-import { API_ENDPOINTS } from "@/lib/api"  // ✅ Updated import
+import { API_ENDPOINTS } from "@/lib/api"
+import { Spinner } from "@/components/ui/spinner" // ✅ added spinner
 
 interface User {
   id: string
@@ -45,14 +46,19 @@ export default function DashboardPage() {
   const [searchDate, setSearchDate] = useState("")
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false) // ✅ added
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+  const [isLoadingTasks, setIsLoadingTasks] = useState(true) // ✅ loading tasks
+  const [isSavingEdit, setIsSavingEdit] = useState(false) // ✅ saving edit
+  const [isTogglingTask, setIsTogglingTask] = useState(false)
+  const [isDeletingTask, setIsDeletingTask] = useState(false)
+  const [isAddingTasks, setIsAddingTasks] = useState(false)
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
 
   const [editingTask, setEditingTask] = useState<{
     taskId: string
     currentTask: Task
   } | null>(null)
 
-  // 🔐 Auth + load tasks
   useEffect(() => {
     const currentUser = localStorage.getItem("daycard_current_user")
     if (!currentUser) {
@@ -65,13 +71,12 @@ export default function DashboardPage() {
     loadTasks(parsedUser.id)
   }, [router])
 
-  // 📦 Load tasks from backend
   const loadTasks = async (userId: string) => {
+    setIsLoadingTasks(true)
     const res = await fetch(`${API_ENDPOINTS.tasks}/${userId}`)
     const data = await res.json()
 
     const grouped: Record<string, Task[]> = {}
-
     data.forEach((t: any) => {
       if (!grouped[t.date]) grouped[t.date] = []
       grouped[t.date].push({
@@ -91,12 +96,12 @@ export default function DashboardPage() {
       }))
 
     setDayCards(cards)
+    setIsLoadingTasks(false)
   }
 
-  // ➕ Add tasks
   const handleAddTasks = async (date: string, tasks: any[]) => {
     if (!user) return
-
+    setIsAddingTasks(true)
     await fetch(`${API_ENDPOINTS.tasks}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -106,59 +111,50 @@ export default function DashboardPage() {
         tasks,
       }),
     })
-
-    loadTasks(user.id)
+    await loadTasks(user.id)
+    setIsAddingTasks(false)
   }
 
-  // ✅ Toggle task
   const handleToggleTask = async (_: string, taskId: string) => {
-    await fetch(`${API_ENDPOINTS.tasks}/${taskId}/toggle`, {
-      method: "PATCH",
-    })
-    loadTasks(user!.id)
+    setIsTogglingTask(true)
+    await fetch(`${API_ENDPOINTS.tasks}/${taskId}/toggle`, { method: "PATCH" })
+    await loadTasks(user!.id)
+    setIsTogglingTask(false)
   }
 
-  // ❌ Delete task
   const handleDeleteTask = async (_: string, taskId: string) => {
-    await fetch(`${API_ENDPOINTS.tasks}/${taskId}`, {
-      method: "DELETE",
-    })
-    loadTasks(user!.id)
+    setIsDeletingTask(true)
+    await fetch(`${API_ENDPOINTS.tasks}/${taskId}`, { method: "DELETE" })
+    await loadTasks(user!.id)
+    setIsDeletingTask(false)
   }
 
-  // ✏️ OPEN Edit modal
   const handleEditTask = (cardDate: string, taskId: string) => {
     const card = dayCards.find((c) => c.date === cardDate)
     if (!card) return
-
     const task = card.tasks.find((t) => t.id === taskId)
     if (!task) return
-
     setEditingTask({ taskId, currentTask: task })
     setIsEditModalOpen(true)
   }
 
-  // ✏️ Update task (backend)
-  const handleUpdateTask = async (
-    text: string,
-    startTime: string,
-    endTime: string
-  ) => {
+  const handleUpdateTask = async (text: string, startTime: string, endTime: string) => {
     if (!editingTask) return
-
+    setIsSavingEdit(true)
     await fetch(`${API_ENDPOINTS.tasks}/${editingTask.taskId}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text, startTime, endTime }),
     })
-
     setIsEditModalOpen(false)
     setEditingTask(null)
-    loadTasks(user!.id)
+    await loadTasks(user!.id)
+    setIsSavingEdit(false)
   }
 
-  // 🚪 Logout
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    setIsLoggingOut(true)
+    await new Promise((resolve) => setTimeout(resolve, 500))
     localStorage.removeItem("daycard_current_user")
     router.push("/login")
   }
@@ -181,7 +177,6 @@ export default function DashboardPage() {
         {isSidebarOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
       </Button>
 
-      {/* Mobile overlay */}
       {isSidebarOpen && (
         <div className="fixed inset-0 bg-black/50 z-30 md:hidden" onClick={() => setIsSidebarOpen(false)} />
       )}
@@ -212,9 +207,23 @@ export default function DashboardPage() {
         <div className="flex-1" />
 
         <div className="p-6 border-t border-border">
-          <Button variant="outline" className="w-full justify-start bg-transparent" onClick={handleLogout}>
-            <LogOut className="h-4 w-4 mr-2" />
-            Logout
+          <Button
+            variant="outline"
+            className="w-full justify-start bg-transparent"
+            onClick={handleLogout}
+            disabled={isLoggingOut}
+          >
+            {isLoggingOut ? (
+              <>
+                <Spinner size="sm" className="mr-2" />
+                Logging out...
+              </>
+            ) : (
+              <>
+                <LogOut className="h-4 w-4 mr-2" />
+                Logout
+              </>
+            )}
           </Button>
         </div>
       </aside>
@@ -237,21 +246,34 @@ export default function DashboardPage() {
                   className="pl-10"
                 />
               </div>
-              <Button onClick={() => setIsModalOpen(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Today's Tasks
+              <Button onClick={() => setIsModalOpen(true)} disabled={isAddingTasks}>
+                {isAddingTasks ? (
+                  <>
+                    <Spinner size="sm" className="mr-2" />
+                    Adding...
+                  </>
+                ) : (
+                  <>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Today's Tasks
+                  </>
+                )}
               </Button>
             </div>
           </div>
 
           {/* Task Cards Grid */}
-          {filteredCards.length === 0 ? (
+          {isLoadingTasks ? (
+            <div className="text-center py-12">
+              <Spinner size="lg" />
+            </div>
+          ) : filteredCards.length === 0 ? (
             <div className="text-center py-12">
               <CalendarDays className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
               <h3 className="text-lg font-semibold mb-2">No tasks yet</h3>
               <p className="text-muted-foreground mb-4">Start by adding your daily tasks</p>
-              <Button onClick={() => setIsModalOpen(true)}>
-                <Plus className="h-4 w-4 mr-2" />
+              <Button onClick={() => setIsModalOpen(true)} disabled={isAddingTasks}>
+                {isAddingTasks ? <Spinner size="sm" className="mr-2" /> : <Plus className="h-4 w-4 mr-2" />}
                 Add Your First Tasks
               </Button>
             </div>
@@ -272,10 +294,8 @@ export default function DashboardPage() {
         </div>
       </main>
 
-      {/* Add Task Modal */}
       <AddTaskModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onAddTasks={handleAddTasks} />
 
-      {/* Edit Task Modal */}
       {editingTask && (
         <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
           <DialogContent className="sm:max-w-md">
@@ -298,7 +318,7 @@ export default function DashboardPage() {
               <div className="space-y-4 py-4">
                 <div className="space-y-2">
                   <Label htmlFor="taskText">Task</Label>
-                  <Input id="taskText" name="taskText" defaultValue={editingTask.currentTask.text} required />
+                  <Input id="taskText" name="taskText" defaultValue={editingTask.currentTask.text} disabled={isSavingEdit} required />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -308,6 +328,7 @@ export default function DashboardPage() {
                       name="startTime"
                       type="time"
                       defaultValue={editingTask.currentTask.startTime}
+                      disabled={isSavingEdit}
                       required
                     />
                   </div>
@@ -318,6 +339,7 @@ export default function DashboardPage() {
                       name="endTime"
                       type="time"
                       defaultValue={editingTask.currentTask.endTime}
+                      disabled={isSavingEdit}
                       required
                     />
                   </div>
@@ -331,10 +353,20 @@ export default function DashboardPage() {
                     setIsEditModalOpen(false)
                     setEditingTask(null)
                   }}
+                  disabled={isSavingEdit}
                 >
                   Cancel
                 </Button>
-                <Button type="submit">Save Changes</Button>
+                <Button type="submit" disabled={isSavingEdit}>
+                  {isSavingEdit ? (
+                    <>
+                      <Spinner size="sm" className="mr-2" />
+                      Saving...
+                    </>
+                  ) : (
+                    "Save Changes"
+                  )}
+                </Button>
               </DialogFooter>
             </form>
           </DialogContent>

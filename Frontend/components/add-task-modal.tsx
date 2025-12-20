@@ -15,6 +15,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Plus, X } from "lucide-react"
+import { Spinner } from "@/components/ui/spinner"
 
 interface AddTaskModalProps {
   isOpen: boolean
@@ -32,6 +33,7 @@ export function AddTaskModal({ isOpen, onClose, onAddTasks }: AddTaskModalProps)
   const today = new Date().toISOString().split("T")[0]
   const [date, setDate] = useState(today)
   const [tasks, setTasks] = useState<TaskInput[]>([{ text: "", startTime: "09:00", endTime: "10:00" }])
+  const [isSaving, setIsSaving] = useState(false)
 
   const handleAddTaskInput = () => {
     setTasks([...tasks, { text: "", startTime: "09:00", endTime: "10:00" }])
@@ -47,21 +49,23 @@ export function AddTaskModal({ isOpen, onClose, onAddTasks }: AddTaskModalProps)
     setTasks(newTasks)
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    // Filter out tasks with empty text
     const validTasks = tasks.filter((task) => task.text.trim() !== "")
 
     if (validTasks.length === 0) {
       return
     }
 
+    setIsSaving(true)
+    await new Promise((resolve) => setTimeout(resolve, 500))
+
     onAddTasks(date, validTasks)
 
-    // Reset form
     setDate(today)
     setTasks([{ text: "", startTime: "09:00", endTime: "10:00" }])
+    setIsSaving(false)
     onClose()
   }
 
@@ -85,7 +89,14 @@ export function AddTaskModal({ isOpen, onClose, onAddTasks }: AddTaskModalProps)
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="date">Date</Label>
-              <Input id="date" type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
+              <Input
+                id="date"
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                disabled={isSaving}
+                required
+              />
             </div>
 
             <div className="space-y-4">
@@ -98,9 +109,16 @@ export function AddTaskModal({ isOpen, onClose, onAddTasks }: AddTaskModalProps)
                       value={task.text}
                       onChange={(e) => handleTaskChange(index, "text", e.target.value)}
                       className="flex-1"
+                      disabled={isSaving}
                     />
                     {tasks.length > 1 && (
-                      <Button type="button" variant="ghost" size="icon" onClick={() => handleRemoveTaskInput(index)}>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleRemoveTaskInput(index)}
+                        disabled={isSaving}
+                      >
                         <X className="h-4 w-4" />
                       </Button>
                     )}
@@ -115,6 +133,7 @@ export function AddTaskModal({ isOpen, onClose, onAddTasks }: AddTaskModalProps)
                         type="time"
                         value={task.startTime}
                         onChange={(e) => handleTaskChange(index, "startTime", e.target.value)}
+                        disabled={isSaving}
                         required
                       />
                     </div>
@@ -127,6 +146,7 @@ export function AddTaskModal({ isOpen, onClose, onAddTasks }: AddTaskModalProps)
                         type="time"
                         value={task.endTime}
                         onChange={(e) => handleTaskChange(index, "endTime", e.target.value)}
+                        disabled={isSaving}
                         required
                       />
                     </div>
@@ -139,6 +159,7 @@ export function AddTaskModal({ isOpen, onClose, onAddTasks }: AddTaskModalProps)
                 size="sm"
                 onClick={handleAddTaskInput}
                 className="w-full bg-transparent"
+                disabled={isSaving}
               >
                 <Plus className="h-4 w-4 mr-2" />
                 Add Another Task
@@ -146,10 +167,19 @@ export function AddTaskModal({ isOpen, onClose, onAddTasks }: AddTaskModalProps)
             </div>
           </div>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={handleClose}>
+            <Button type="button" variant="outline" onClick={handleClose} disabled={isSaving}>
               Cancel
             </Button>
-            <Button type="submit">Save Tasks</Button>
+            <Button type="submit" disabled={isSaving}>
+              {isSaving ? (
+                <>
+                  <Spinner size="sm" className="mr-2" />
+                  Saving...
+                </>
+              ) : (
+                "Save Tasks"
+              )}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

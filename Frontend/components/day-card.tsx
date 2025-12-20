@@ -1,9 +1,11 @@
 "use client"
 
+import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Button } from "@/components/ui/button"
 import { Trash2, Pencil, Clock } from "lucide-react"
+import { Spinner } from "@/components/ui/spinner"
 
 interface Task {
   id: string
@@ -39,6 +41,15 @@ export function DayCard({ date, tasks, onToggleTask, onDeleteTask, onEditTask }:
     return `${displayHour}:${minutes} ${ampm}`
   }
 
+  const [deletingTaskId, setDeletingTaskId] = useState<string | null>(null)
+
+  const handleDelete = async (taskId: string) => {
+    setDeletingTaskId(taskId)
+    await new Promise((resolve) => setTimeout(resolve, 400))
+    onDeleteTask(taskId)
+    setDeletingTaskId(null)
+  }
+
   return (
     <Card className="hover:shadow-lg transition-shadow">
       <CardHeader className="pb-3">
@@ -58,6 +69,7 @@ export function DayCard({ date, tasks, onToggleTask, onDeleteTask, onEditTask }:
                 checked={task.completed}
                 onCheckedChange={() => onToggleTask(task.id)}
                 className="mt-1"
+                disabled={deletingTaskId === task.id}
               />
               <label
                 htmlFor={task.id}
@@ -66,11 +78,27 @@ export function DayCard({ date, tasks, onToggleTask, onDeleteTask, onEditTask }:
                 {task.text}
               </label>
               <div className="flex gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => onEditTask(task.id)}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6"
+                  onClick={() => onEditTask(task.id)}
+                  disabled={deletingTaskId === task.id}
+                >
                   <Pencil className="h-3 w-3" />
                 </Button>
-                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => onDeleteTask(task.id)}>
-                  <Trash2 className="h-3 w-3 text-destructive" />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6"
+                  onClick={() => handleDelete(task.id)}
+                  disabled={deletingTaskId === task.id}
+                >
+                  {deletingTaskId === task.id ? (
+                    <Spinner size="sm" className="h-3 w-3 text-destructive" />
+                  ) : (
+                    <Trash2 className="h-3 w-3 text-destructive" />
+                  )}
                 </Button>
               </div>
             </div>
