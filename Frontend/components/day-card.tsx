@@ -65,7 +65,7 @@ export function DayCard({ date, tasks, onToggleTask, onDeleteTask, onEditTask }:
               >
                 {task.text}
               </label>
-              <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="flex gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                 <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => onEditTask(task.id)}>
                   <Pencil className="h-3 w-3" />
                 </Button>
