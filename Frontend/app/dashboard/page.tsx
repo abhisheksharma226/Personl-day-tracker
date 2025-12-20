@@ -13,7 +13,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog"
-import { CalendarDays, LogOut, Plus, Search } from "lucide-react"
+import { CalendarDays, LogOut, Plus, Search, Menu, X } from "lucide-react" // ✅ added Menu and X
 import { DayCard } from "@/components/day-card"
 import { AddTaskModal } from "@/components/add-task-modal"
 import { API_ENDPOINTS } from "@/lib/api"  // ✅ Updated import
@@ -45,6 +45,7 @@ export default function DashboardPage() {
   const [searchDate, setSearchDate] = useState("")
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false) // ✅ added
 
   const [editingTask, setEditingTask] = useState<{
     taskId: string
@@ -170,8 +171,31 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen flex bg-muted/20">
+      {/* Mobile Sidebar Button */}
+      <Button
+        variant="ghost"
+        size="icon"
+        className="fixed top-4 left-4 z-50 md:hidden"
+        onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+      >
+        {isSidebarOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+      </Button>
+
+      {/* Mobile overlay */}
+      {isSidebarOpen && (
+        <div className="fixed inset-0 bg-black/50 z-30 md:hidden" onClick={() => setIsSidebarOpen(false)} />
+      )}
+
       {/* Left Sidebar */}
-      <aside className="w-64 bg-card border-r border-border flex flex-col">
+      <aside
+        className={`
+          fixed md:static inset-y-0 left-0 z-40
+          w-64 bg-card border-r border-border flex flex-col
+          transform transition-transform duration-300 ease-in-out
+          ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}
+          md:translate-x-0
+        `}
+      >
         <div className="p-6 border-b border-border">
           <div className="flex items-center gap-2 mb-6">
             <div className="bg-primary rounded-lg p-2">
