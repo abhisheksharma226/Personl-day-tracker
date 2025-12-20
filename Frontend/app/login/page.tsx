@@ -12,10 +12,9 @@ import { CalendarDays } from "lucide-react"
 import { Spinner } from "@/components/ui/spinner"
 import { API_ENDPOINTS } from "@/lib/api"
 
-export default function SignUpPage() {
+export default function LoginPage() {
   const router = useRouter()
   const [formData, setFormData] = useState({
-    name: "",
     email: "",
     password: "",
   })
@@ -27,21 +26,15 @@ export default function SignUpPage() {
     setError("")
     setIsLoading(true)
 
-    // Basic validation
-    if (!formData.name || !formData.email || !formData.password) {
+    // Validation
+    if (!formData.email || !formData.password) {
       setError("All fields are required")
       setIsLoading(false)
       return
     }
 
-    if (formData.password.length < 6) {
-      setError("Password must be at least 6 characters")
-      setIsLoading(false)
-      return
-    }
-
     try {
-      const res = await fetch(API_ENDPOINTS.signup, {
+      const res = await fetch(API_ENDPOINTS.login, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -52,7 +45,7 @@ export default function SignUpPage() {
       const data = await res.json()
 
       if (!res.ok) {
-        setError(data.message || "Signup failed")
+        setError(data.message || "Login failed")
         setIsLoading(false)
         return
       }
@@ -79,24 +72,11 @@ export default function SignUpPage() {
             </div>
             <CardTitle className="text-2xl">DayCard</CardTitle>
           </div>
-          <CardDescription className="text-center">
-            Create your account to start organizing your daily tasks
-          </CardDescription>
+          <CardDescription className="text-center">Sign in to access your daily tasks</CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
             {error && <div className="bg-destructive/10 text-destructive text-sm p-3 rounded-md">{error}</div>}
-            <div className="space-y-2">
-              <Label htmlFor="name">Name</Label>
-              <Input
-                id="name"
-                type="text"
-                placeholder="John Doe"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                disabled={isLoading}
-              />
-            </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -125,16 +105,16 @@ export default function SignUpPage() {
               {isLoading ? (
                 <>
                   <Spinner size="sm" className="mr-2" />
-                  Creating Account...
+                  Signing In...
                 </>
               ) : (
-                "Sign Up"
+                "Sign In"
               )}
             </Button>
             <p className="text-sm text-muted-foreground text-center">
-              Already have an account?{" "}
-              <Link href="/login" className="text-primary font-bold underline hover:underline">
-                Sign in
+              Don't have an account?{" "}
+              <Link href="/signup" className="text-primary font-bold underline hover:underline">
+                Sign up
               </Link>
             </p>
           </CardFooter>
