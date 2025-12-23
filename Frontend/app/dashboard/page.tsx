@@ -292,7 +292,24 @@ export default function DashboardPage() {
         <div className="max-w-7xl mx-auto p-6 md:p-8 lg:p-12">
           {/* Header */}
           <div className="mb-8 space-y-6">
-            <h2 className="text-3xl font-bold tracking-tight">Daily Tasks</h2>
+            {/* 🔥 Mobile Header with Streak & Points */}
+<div className="flex items-center justify-between md:hidden">
+  <h2 className="text-2xl font-bold tracking-tight">Daily Tasks</h2>
+
+  <div className="flex gap-3">
+    <div className="bg-muted px-3 py-1 rounded-lg text-center">
+      <p className="text-xs text-muted-foreground">🔥</p>
+      <p className="text-sm font-bold">{streak}</p>
+    </div>
+
+    <div className="bg-muted px-3 py-1 rounded-lg text-center">
+      <p className="text-xs text-muted-foreground">⭐</p>
+      <p className="text-sm font-bold">{points}</p>
+    </div>
+  </div>
+</div>
+
+            {/* <h2 className="text-3xl font-bold tracking-tight">Daily Tasks</h2> */}
 
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="relative flex-1">
