@@ -54,6 +54,41 @@ export default function DashboardPage() {
   const [isAddingTasks, setIsAddingTasks] = useState(false)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
 
+  const [points, setPoints] = useState(0)
+  const [streak, setStreak] = useState(0)
+
+  const calculateStreak = (cards: DayCardData[]) => {
+    if (cards.length === 0) return 0
+  
+    // extract unique dates
+    const dates = cards
+      .map((c) => c.date)
+      .sort((a, b) => new Date(b).getTime() - new Date(a).getTime())
+  
+    let streakCount = 0
+    let currentDate = new Date()
+  
+    for (let i = 0; i < dates.length; i++) {
+      const taskDate = new Date(dates[i])
+      const diff =
+        Math.floor(
+          (currentDate.setHours(0, 0, 0, 0) -
+            taskDate.setHours(0, 0, 0, 0)) /
+            (1000 * 60 * 60 * 24)
+        )
+  
+      if (diff === 0 || diff === 1) {
+        streakCount++
+        currentDate = taskDate
+      } else {
+        break
+      }
+    }
+  
+    return streakCount
+  }
+
+
   const [editingTask, setEditingTask] = useState<{
     taskId: string
     currentTask: Task
@@ -75,6 +110,7 @@ export default function DashboardPage() {
     setIsLoadingTasks(true)
     const res = await fetch(`${API_ENDPOINTS.tasks}/${userId}`)
     const data = await res.json()
+    
 
     const grouped: Record<string, Task[]> = {}
     data.forEach((t: any) => {
@@ -96,6 +132,15 @@ export default function DashboardPage() {
       }))
 
     setDayCards(cards)
+      // 🔥 POINTS = total tasks count
+    const totalTasks = data.length
+    setPoints(totalTasks)
+
+    // 🔥 STREAK calculation
+    const calculatedStreak = calculateStreak(cards)
+    setStreak(calculatedStreak)
+
+
     setIsLoadingTasks(false)
   }
 
@@ -113,6 +158,7 @@ export default function DashboardPage() {
     })
     await loadTasks(user.id)
     setIsAddingTasks(false)
+    
   }
 
   const handleToggleTask = async (_: string, taskId: string) => {
@@ -202,6 +248,19 @@ export default function DashboardPage() {
             <p className="font-semibold text-foreground">{user.name}</p>
             <p className="text-sm text-muted-foreground">{user.email}</p>
           </div>
+
+          <div className="mt-6 space-y-4">
+            <div className="bg-muted rounded-lg p-4 text-center">
+              <p className="text-sm text-muted-foreground">🔥 Streak</p>
+              <p className="text-2xl font-bold">{streak} days</p>
+            </div>
+
+            <div className="bg-muted rounded-lg p-4 text-center">
+              <p className="text-sm text-muted-foreground">⭐ Points</p>
+              <p className="text-2xl font-bold">{points}</p>
+            </div>
+          </div>
+
         </div>
 
         <div className="flex-1" />
