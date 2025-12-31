@@ -122,6 +122,14 @@ export default function DashboardPage() {
         startTime: t.startTime,
         endTime: t.endTime,
       })
+
+      // 🔥 sort tasks by startTime (earliest first)
+        Object.keys(grouped).forEach((date) => {
+          grouped[date].sort((a, b) => {
+            return a.startTime.localeCompare(b.startTime)
+          })
+        })
+
     })
 
     const cards: DayCardData[] = Object.keys(grouped)
