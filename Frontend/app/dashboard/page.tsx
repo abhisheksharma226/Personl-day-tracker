@@ -216,7 +216,7 @@ const calculateStreak = (cards: DayCardData[]) => {
   if (!user) return null
 
   return (
-    <div className="min-h-screen flex bg-muted/20">
+    <div className="min-h-screen flex bg-muted/20 [&_input[type=checkbox]]:cursor-pointer">
       {/* Mobile Sidebar Button */}
       <Button
         variant="ghost"
