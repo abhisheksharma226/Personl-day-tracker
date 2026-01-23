@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -14,12 +13,11 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog"
-import { CalendarDays, LogOut, Plus, Search, Menu, X, Sparkles, TrendingUp } from "lucide-react"
+import { CalendarDays, LogOut, Plus, Search, Menu, X } from "lucide-react"
 import { DayCard } from "@/components/day-card"
 import { AddTaskModal } from "@/components/add-task-modal"
 import { API_ENDPOINTS } from "@/lib/api"
-import { Spinner } from "@/components/ui/spinner"
-import Loading from "./loading"
+import { Spinner } from "@/components/ui/spinner" // ✅ added spinner
 
 interface User {
   id: string
@@ -42,7 +40,6 @@ interface DayCardData {
 
 export default function DashboardPage() {
   const router = useRouter()
-  const searchParams = useSearchParams()
 
   const [user, setUser] = useState<User | null>(null)
   const [dayCards, setDayCards] = useState<DayCardData[]>([])
@@ -241,34 +238,30 @@ const calculateStreak = (cards: DayCardData[]) => {
           w-64 bg-card border-r border-border flex flex-col
           transform transition-transform duration-300 ease-in-out
           ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}
-          md:translate-x-0 animate-slide-left
+          md:translate-x-0
         `}
       >
         <div className="p-6 border-b border-border">
-          <div className="flex items-center gap-2 mb-6 stagger-1">
-            <div className="bg-primary rounded-lg p-2 transition-transform hover:scale-110 duration-300">
+          <div className="flex items-center gap-2 mb-6">
+            <div className="bg-primary rounded-lg p-2">
               <CalendarDays className="h-5 w-5 text-primary-foreground" />
             </div>
-            <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">DayCard</h1>
+            <h1 className="text-xl font-bold">DayCard</h1>
           </div>
-          <div className="space-y-1 stagger-2">
+          <div className="space-y-1">
             <p className="font-semibold text-foreground">{user.name}</p>
             <p className="text-sm text-muted-foreground">{user.email}</p>
           </div>
 
           <div className="mt-6 space-y-4">
-            <div className="bg-gradient-to-br from-orange-500/10 to-orange-600/5 border border-orange-500/20 rounded-lg p-4 text-center card-hover stagger-3">
-              <p className="text-sm text-muted-foreground flex items-center justify-center gap-2">
-                <span className="animate-float">🔥</span> Streak
-              </p>
-              <p className="text-3xl font-bold text-orange-600 mt-2">{streak} days</p>
+            <div className="bg-muted rounded-lg p-4 text-center">
+              <p className="text-sm text-muted-foreground">🔥 Streak</p>
+              <p className="text-2xl font-bold">{streak} days</p>
             </div>
 
-            <div className="bg-gradient-to-br from-yellow-500/10 to-yellow-600/5 border border-yellow-500/20 rounded-lg p-4 text-center card-hover stagger-4">
-              <p className="text-sm text-muted-foreground flex items-center justify-center gap-2">
-                <Sparkles className="h-4 w-4 text-yellow-600" /> Points
-              </p>
-              <p className="text-3xl font-bold text-yellow-600 mt-2">{points}</p>
+            <div className="bg-muted rounded-lg p-4 text-center">
+              <p className="text-sm text-muted-foreground">⭐ Points</p>
+              <p className="text-2xl font-bold">{points}</p>
             </div>
           </div>
 
@@ -276,10 +269,10 @@ const calculateStreak = (cards: DayCardData[]) => {
 
         <div className="flex-1" />
 
-        <div className="p-6 border-t border-border stagger-5">
+        <div className="p-6 border-t border-border">
           <Button
             variant="outline"
-            className="w-full justify-start bg-transparent transition-all hover:bg-destructive/10 hover:text-destructive duration-300 group btn-ripple"
+            className="w-full justify-start bg-transparent"
             onClick={handleLogout}
             disabled={isLoggingOut}
           >
@@ -290,7 +283,7 @@ const calculateStreak = (cards: DayCardData[]) => {
               </>
             ) : (
               <>
-                <LogOut className="h-4 w-4 mr-2 group-hover:animate-bounce" />
+                <LogOut className="h-4 w-4 mr-2" />
                 Logout
               </>
             )}
@@ -302,40 +295,38 @@ const calculateStreak = (cards: DayCardData[]) => {
       <main className="flex-1 overflow-auto">
         <div className="max-w-7xl mx-auto p-6 md:p-8 lg:p-12">
           {/* Header */}
-          <div className="mb-8 space-y-6 animate-fade-in">
+          <div className="mb-8 space-y-6">
             {/* 🔥 Mobile Header with Streak & Points */}
 <div className="flex items-center justify-between md:hidden">
-  <h2 className="text-2xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">Daily Tasks</h2>
+  <h2 className="text-2xl font-bold tracking-tight">Daily Tasks</h2>
 
   <div className="flex gap-3">
-    <div className="bg-gradient-to-br from-orange-500/10 to-orange-600/5 border border-orange-500/20 px-3 py-1 rounded-lg text-center transition-all hover:scale-105 duration-300">
+    <div className="bg-muted px-3 py-1 rounded-lg text-center">
       <p className="text-xs text-muted-foreground">🔥</p>
-      <p className="text-sm font-bold text-orange-600">{streak}</p>
+      <p className="text-sm font-bold">{streak}</p>
     </div>
 
-    <div className="bg-gradient-to-br from-yellow-500/10 to-yellow-600/5 border border-yellow-500/20 px-3 py-1 rounded-lg text-center transition-all hover:scale-105 duration-300">
+    <div className="bg-muted px-3 py-1 rounded-lg text-center">
       <p className="text-xs text-muted-foreground">⭐</p>
-      <p className="text-sm font-bold text-yellow-600">{points}</p>
+      <p className="text-sm font-bold">{points}</p>
     </div>
   </div>
 </div>
 
+            {/* <h2 className="text-3xl font-bold tracking-tight">Daily Tasks</h2> */}
+
             <div className="flex flex-col sm:flex-row gap-4">
-              <div className="relative flex-1 group">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground transition-colors group-focus-within:text-primary duration-300" />
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   type="text"
                   placeholder="Search by date (YYYY-MM-DD)"
                   value={searchDate}
                   onChange={(e) => setSearchDate(e.target.value)}
-                  className="pl-10 transition-all duration-300 focus:ring-2 focus:ring-primary/50"
+                  className="pl-10"
                 />
               </div>
-              <Button 
-                onClick={() => setIsModalOpen(true)} 
-                disabled={isAddingTasks}
-                className="transition-all hover:shadow-lg hover:scale-105 duration-300 btn-ripple"
-              >
+              <Button onClick={() => setIsModalOpen(true)} disabled={isAddingTasks}>
                 {isAddingTasks ? (
                   <>
                     <Spinner size="sm" className="mr-2" />
@@ -343,7 +334,7 @@ const calculateStreak = (cards: DayCardData[]) => {
                   </>
                 ) : (
                   <>
-                    <Plus className="h-4 w-4 mr-2 transition-transform group-hover:rotate-90 duration-300" />
+                    <Plus className="h-4 w-4 mr-2" />
                     Add Today's Tasks
                   </>
                 )}
@@ -354,38 +345,29 @@ const calculateStreak = (cards: DayCardData[]) => {
           {/* Task Cards Grid */}
           {isLoadingTasks ? (
             <div className="text-center py-12">
-              <div className="inline-block animate-spin-slow">
-                <Spinner size="lg" />
-              </div>
+              <Spinner size="lg" />
             </div>
           ) : filteredCards.length === 0 ? (
-            <div className="text-center py-12 animate-scale-in">
-              <div className="inline-block mb-4 animate-float">
-                <CalendarDays className="h-12 w-12 text-muted-foreground" />
-              </div>
+            <div className="text-center py-12">
+              <CalendarDays className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
               <h3 className="text-lg font-semibold mb-2">No tasks yet</h3>
               <p className="text-muted-foreground mb-4">Start by adding your daily tasks</p>
-              <Button 
-                onClick={() => setIsModalOpen(true)} 
-                disabled={isAddingTasks}
-                className="transition-all hover:scale-105 duration-300 btn-ripple"
-              >
+              <Button onClick={() => setIsModalOpen(true)} disabled={isAddingTasks}>
                 {isAddingTasks ? <Spinner size="sm" className="mr-2" /> : <Plus className="h-4 w-4 mr-2" />}
                 Add Your First Tasks
               </Button>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {filteredCards.map((card, index) => (
-                <div key={card.date} className={`stagger-${(index % 5) + 1}`}>
-                  <DayCard
-                    date={card.date}
-                    tasks={card.tasks}
-                    onToggleTask={(taskId) => handleToggleTask(card.date, taskId)}
-                    onDeleteTask={(taskId) => handleDeleteTask(card.date, taskId)}
-                    onEditTask={(taskId) => handleEditTask(card.date, taskId)}
-                  />
-                </div>
+              {filteredCards.map((card) => (
+                <DayCard
+                  key={card.date}
+                  date={card.date}
+                  tasks={card.tasks}
+                  onToggleTask={(taskId) => handleToggleTask(card.date, taskId)}
+                  onDeleteTask={(taskId) => handleDeleteTask(card.date, taskId)}
+                  onEditTask={(taskId) => handleEditTask(card.date, taskId)}
+                />
               ))}
             </div>
           )}
@@ -396,12 +378,9 @@ const calculateStreak = (cards: DayCardData[]) => {
 
       {editingTask && (
         <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-          <DialogContent className="sm:max-w-md animate-scale-in">
+          <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <Sparkles className="h-5 w-5 text-primary" />
-                Edit Task
-              </DialogTitle>
+              <DialogTitle>Edit Task</DialogTitle>
               <DialogDescription>Update the task details below.</DialogDescription>
             </DialogHeader>
             <form
@@ -417,19 +396,12 @@ const calculateStreak = (cards: DayCardData[]) => {
               }}
             >
               <div className="space-y-4 py-4">
-                <div className="space-y-2 stagger-1">
+                <div className="space-y-2">
                   <Label htmlFor="taskText">Task</Label>
-                  <Input 
-                    id="taskText" 
-                    name="taskText" 
-                    defaultValue={editingTask.currentTask.text} 
-                    disabled={isSavingEdit} 
-                    required 
-                    className="transition-all duration-300 focus:ring-2 focus:ring-primary/50"
-                  />
+                  <Input id="taskText" name="taskText" defaultValue={editingTask.currentTask.text} disabled={isSavingEdit} required />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2 stagger-2">
+                  <div className="space-y-2">
                     <Label htmlFor="startTime">Start Time</Label>
                     <Input
                       id="startTime"
@@ -438,10 +410,9 @@ const calculateStreak = (cards: DayCardData[]) => {
                       defaultValue={editingTask.currentTask.startTime}
                       disabled={isSavingEdit}
                       required
-                      className="transition-all duration-300 focus:ring-2 focus:ring-primary/50"
                     />
                   </div>
-                  <div className="space-y-2 stagger-3">
+                  <div className="space-y-2">
                     <Label htmlFor="endTime">End Time</Label>
                     <Input
                       id="endTime"
@@ -450,7 +421,6 @@ const calculateStreak = (cards: DayCardData[]) => {
                       defaultValue={editingTask.currentTask.endTime}
                       disabled={isSavingEdit}
                       required
-                      className="transition-all duration-300 focus:ring-2 focus:ring-primary/50"
                     />
                   </div>
                 </div>
@@ -464,15 +434,10 @@ const calculateStreak = (cards: DayCardData[]) => {
                     setEditingTask(null)
                   }}
                   disabled={isSavingEdit}
-                  className="transition-all duration-300"
                 >
                   Cancel
                 </Button>
-                <Button 
-                  type="submit" 
-                  disabled={isSavingEdit}
-                  className="transition-all hover:shadow-lg duration-300 btn-ripple"
-                >
+                <Button type="submit" disabled={isSavingEdit}>
                   {isSavingEdit ? (
                     <>
                       <Spinner size="sm" className="mr-2" />
@@ -490,5 +455,3 @@ const calculateStreak = (cards: DayCardData[]) => {
     </div>
   )
 }
-
-export { Loading }
