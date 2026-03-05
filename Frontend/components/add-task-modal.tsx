@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dialog"
 import { Plus, X } from "lucide-react"
 import { Spinner } from "@/components/ui/spinner"
+import { getLocalIsoDate } from "@/lib/utils"
 
 interface AddTaskModalProps {
   isOpen: boolean
@@ -30,7 +31,7 @@ interface TaskInput {
 }
 
 export function AddTaskModal({ isOpen, onClose, onAddTasks }: AddTaskModalProps) {
-  const today = new Date().toISOString().split("T")[0]
+  const today = getLocalIsoDate()
   const [date, setDate] = useState(today)
   const [tasks, setTasks] = useState<TaskInput[]>([{ text: "", startTime: "09:00", endTime: "10:00" }])
   const [isSaving, setIsSaving] = useState(false)

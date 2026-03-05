@@ -18,6 +18,7 @@ import { DayCard } from "@/components/day-card"
 import { AddTaskModal } from "@/components/add-task-modal"
 import { API_ENDPOINTS } from "@/lib/api"
 import { Spinner } from "@/components/ui/spinner" // ✅ added spinner
+import { getLocalIsoDate } from "@/lib/utils"
 
 interface User {
   id: string
@@ -215,6 +216,21 @@ const calculateStreak = (cards: DayCardData[]) => {
 
   if (!user) return null
 
+
+  function formatDate(date: Date) {
+  const day = date.getDate();
+  const suffix =
+    day % 10 === 1 && day !== 11 ? "st" :
+    day % 10 === 2 && day !== 12 ? "nd" :
+    day % 10 === 3 && day !== 13 ? "rd" : "th";
+
+  const month = date.toLocaleString("en-GB", { month: "long" });
+  const year = date.getFullYear();
+
+  return `${day}${suffix} ${month} ${year}`;
+}
+
+
   return (
     <div className="min-h-screen flex bg-muted/20 [&_input[type=checkbox]]:cursor-pointer">
       {/* Mobile Sidebar Button */}
@@ -234,7 +250,7 @@ const calculateStreak = (cards: DayCardData[]) => {
       {/* Left Sidebar */}
       <aside
         className={`
-          fixed md:static inset-y-0 left-0 z-40
+          fixed md:sticky md:top-0 md:h-screen inset-y-0 left-0 z-40
           w-64 bg-card border-r border-border flex flex-col
           transform transition-transform duration-300 ease-in-out
           ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}
@@ -267,6 +283,48 @@ const calculateStreak = (cards: DayCardData[]) => {
 
         </div>
 
+        {/* Today's Overview */}
+        <div className="p-6 border-t border-border">
+          <h3 className="font-semibold mb-4 text-foreground">Today's Overview</h3>
+          <div className="space-y-3">
+            <div className="text-sm">
+              <p className="text-muted-foreground">Date</p>
+              <p className="font-medium">{formatDate(new Date())}</p>
+            </div>
+            {(() => {
+              const today = getLocalIsoDate()
+              const todayCard = dayCards.find(card => card.date === today)
+              const todayTasks = todayCard?.tasks || []
+              const completedTasks = todayTasks.filter(task => task.completed).length
+              return (
+                <>
+                  <div className="text-sm">
+                    <p className="text-muted-foreground">Tasks Today</p>
+                    <p className="font-medium">{todayTasks.length}</p>
+                  </div>
+                  <div className="text-sm">
+                    <p className="text-muted-foreground">Completed</p>
+                    <p className="font-medium">{completedTasks}/{todayTasks.length}</p>
+                  </div>
+                  {todayTasks.length > 0 && (
+                    <div className="mt-3">
+                      <div className="bg-muted rounded-full h-2">
+                        <div 
+                          className="bg-primary h-2 rounded-full transition-all duration-300"
+                          style={{ width: `${todayTasks.length > 0 ? (completedTasks / todayTasks.length) * 100 : 0}%` }}
+                        />
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {Math.round(todayTasks.length > 0 ? (completedTasks / todayTasks.length) * 100 : 0)}% complete
+                      </p>
+                    </div>
+                  )}
+                </>
+              )
+            })()}
+          </div>
+        </div>
+
         <div className="flex-1" />
 
         <div className="p-6 border-t border-border">
@@ -292,10 +350,10 @@ const calculateStreak = (cards: DayCardData[]) => {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-auto">
-        <div className="max-w-7xl mx-auto p-6 md:p-8 lg:p-12">
+      <main className="flex-1 flex flex-col">
+        <div className="max-w-7xl mx-auto p-6 md:p-8 lg:p-12 flex flex-col min-h-0">
           {/* Header */}
-          <div className="mb-8 space-y-6">
+          <div className="flex-shrink-0 mb-8 space-y-6">
             {/* 🔥 Mobile Header with Streak & Points */}
 <div className="flex items-center justify-between md:hidden">
   <h2 className="text-2xl font-bold tracking-tight">Daily Tasks</h2>
@@ -343,34 +401,36 @@ const calculateStreak = (cards: DayCardData[]) => {
           </div>
 
           {/* Task Cards Grid */}
-          {isLoadingTasks ? (
-            <div className="text-center py-12">
-              <Spinner size="lg" />
-            </div>
-          ) : filteredCards.length === 0 ? (
-            <div className="text-center py-12">
-              <CalendarDays className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No tasks yet</h3>
-              <p className="text-muted-foreground mb-4">Start by adding your daily tasks</p>
-              <Button onClick={() => setIsModalOpen(true)} disabled={isAddingTasks}>
-                {isAddingTasks ? <Spinner size="sm" className="mr-2" /> : <Plus className="h-4 w-4 mr-2" />}
-                Add Your First Tasks
-              </Button>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {filteredCards.map((card) => (
-                <DayCard
-                  key={card.date}
-                  date={card.date}
-                  tasks={card.tasks}
-                  onToggleTask={(taskId) => handleToggleTask(card.date, taskId)}
-                  onDeleteTask={(taskId) => handleDeleteTask(card.date, taskId)}
-                  onEditTask={(taskId) => handleEditTask(card.date, taskId)}
-                />
-              ))}
-            </div>
-          )}
+          <div className="flex-1 overflow-auto">
+            {isLoadingTasks ? (
+              <div className="text-center py-12">
+                <Spinner size="lg" />
+              </div>
+            ) : filteredCards.length === 0 ? (
+              <div className="text-center py-12">
+                <CalendarDays className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                <h3 className="text-lg font-semibold mb-2">No tasks yet</h3>
+                <p className="text-muted-foreground mb-4">Start by adding your daily tasks</p>
+                <Button onClick={() => setIsModalOpen(true)} disabled={isAddingTasks}>
+                  {isAddingTasks ? <Spinner size="sm" className="mr-2" /> : <Plus className="h-4 w-4 mr-2" />}
+                  Add Your First Tasks
+                </Button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {filteredCards.map((card) => (
+                  <DayCard
+                    key={card.date}
+                    date={card.date}
+                    tasks={card.tasks}
+                    onToggleTask={(taskId) => handleToggleTask(card.date, taskId)}
+                    onDeleteTask={(taskId) => handleDeleteTask(card.date, taskId)}
+                    onEditTask={(taskId) => handleEditTask(card.date, taskId)}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </main>
 
