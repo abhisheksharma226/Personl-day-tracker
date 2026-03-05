@@ -13,7 +13,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog"
-import { CalendarDays, LogOut, Plus, Search, Menu, X } from "lucide-react"
+import { CalendarDays, LogOut, Plus, Search, Menu, X, ChevronLeft, ChevronRight } from "lucide-react"
 import { DayCard } from "@/components/day-card"
 import { AddTaskModal } from "@/components/add-task-modal"
 import { API_ENDPOINTS } from "@/lib/api"
@@ -57,6 +57,7 @@ export default function DashboardPage() {
 
   const [points, setPoints] = useState(0)
   const [streak, setStreak] = useState(0)
+  const [viewingDate, setViewingDate] = useState<string>(() => getLocalIsoDate())
 
 const calculateStreak = (cards: DayCardData[]) => {
   if (cards.length === 0) return 0
@@ -210,6 +211,18 @@ const calculateStreak = (cards: DayCardData[]) => {
     router.push("/login")
   }
 
+  const handlePreviousDay = () => {
+    const currentDate = new Date(viewingDate)
+    currentDate.setDate(currentDate.getDate() - 1)
+    setViewingDate(currentDate.toISOString().split('T')[0])
+  }
+
+  const handleNextDay = () => {
+    const currentDate = new Date(viewingDate)
+    currentDate.setDate(currentDate.getDate() + 1)
+    setViewingDate(currentDate.toISOString().split('T')[0])
+  }
+
   const filteredCards = searchDate
     ? dayCards.filter((card) => card.date.includes(searchDate))
     : dayCards
@@ -284,44 +297,83 @@ const calculateStreak = (cards: DayCardData[]) => {
         </div>
 
         {/* Today's Overview */}
-        <div className="p-6 border-t border-border">
-          <h3 className="font-semibold mb-4 text-foreground">Today's Overview</h3>
-          <div className="space-y-3">
+        <div className="p-6 border-t border-border flex flex-col flex-1">
+          <h3 className="font-semibold mb-4 text-foreground">Day Overview</h3>
+          <div className="space-y-3 flex-1">
             <div className="text-sm">
-              <p className="text-muted-foreground">Date</p>
-              <p className="font-medium">{formatDate(new Date())}</p>
+              <p className="text-muted-foreground text-xs uppercase tracking-wide">Selected Date</p>
+              <p className="font-semibold text-lg mt-1">{formatDate(new Date(viewingDate))}</p>
+              {viewingDate !== getLocalIsoDate() && (
+                <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                  Past date
+                </p>
+              )}
             </div>
             {(() => {
-              const today = getLocalIsoDate()
-              const todayCard = dayCards.find(card => card.date === today)
-              const todayTasks = todayCard?.tasks || []
-              const completedTasks = todayTasks.filter(task => task.completed).length
+              const viewingCard = dayCards.find(card => card.date === viewingDate)
+              const viewingTasks = viewingCard?.tasks || []
+              const completedTasks = viewingTasks.filter(task => task.completed).length
               return (
                 <>
-                  <div className="text-sm">
-                    <p className="text-muted-foreground">Tasks Today</p>
-                    <p className="font-medium">{todayTasks.length}</p>
+                  <div className="mt-4 grid grid-cols-2 gap-3">
+                    <div className="bg-muted/50 rounded-lg p-3 text-center">
+                      <p className="text-xs text-muted-foreground">Tasks</p>
+                      <p className="text-2xl font-bold text-primary mt-1">{viewingTasks.length}</p>
+                    </div>
+                    <div className="bg-muted/50 rounded-lg p-3 text-center">
+                      <p className="text-xs text-muted-foreground">Completed</p>
+                      <p className="text-2xl font-bold text-primary mt-1">{completedTasks}/{viewingTasks.length}</p>
+                    </div>
                   </div>
-                  <div className="text-sm">
-                    <p className="text-muted-foreground">Completed</p>
-                    <p className="font-medium">{completedTasks}/{todayTasks.length}</p>
-                  </div>
-                  {todayTasks.length > 0 && (
-                    <div className="mt-3">
-                      <div className="bg-muted rounded-full h-2">
+                  {viewingTasks.length > 0 && (
+                    <div className="mt-4">
+                      <div className="bg-muted rounded-full h-2 overflow-hidden">
                         <div 
-                          className="bg-primary h-2 rounded-full transition-all duration-300"
-                          style={{ width: `${todayTasks.length > 0 ? (completedTasks / todayTasks.length) * 100 : 0}%` }}
+                          className="bg-gradient-to-r from-primary to-primary/80 h-2 rounded-full transition-all duration-300"
+                          style={{ width: `${viewingTasks.length > 0 ? (completedTasks / viewingTasks.length) * 100 : 0}%` }}
                         />
                       </div>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {Math.round(todayTasks.length > 0 ? (completedTasks / todayTasks.length) * 100 : 0)}% complete
+                      <p className="text-xs text-muted-foreground mt-2 text-center">
+                        {Math.round(viewingTasks.length > 0 ? (completedTasks / viewingTasks.length) * 100 : 0)}% complete
                       </p>
                     </div>
                   )}
                 </>
               )
             })()}
+          </div>
+
+          {/* Navigation Buttons */}
+          <div className="mt-6 pt-4 border-t border-border space-y-3">
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handlePreviousDay}
+                className="flex-1 h-10 rounded-lg transition-all hover:bg-primary hover:text-primary-foreground"
+              >
+                <ChevronLeft className="h-4 w-4 mr-1" />
+                {/* <span className="text-xs font-medium hidden sm:inline">Previous</span> */}
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setViewingDate(getLocalIsoDate())}
+                className="flex-1 h-10 rounded-lg font-medium text-xs"
+              >
+                Today
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleNextDay}
+                className="flex-1 h-10 rounded-lg transition-all hover:bg-primary hover:text-primary-foreground"
+              >
+                {/* <span className="text-xs font-medium hidden sm:inline">Next</span> */}
+                <ChevronRight className="h-4 w-4 ml-1" />
+              </Button>
+            </div>
           </div>
         </div>
 
