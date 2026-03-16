@@ -58,6 +58,9 @@ export default function DashboardPage() {
   const [points, setPoints] = useState(0)
   const [streak, setStreak] = useState(0)
   const [viewingDate, setViewingDate] = useState<string>(() => getLocalIsoDate())
+  const [showCelebration, setShowCelebration] = useState(false)
+  const [isFadingOut, setIsFadingOut] = useState(false)
+  const [celebratedDates, setCelebratedDates] = useState<Record<string, boolean>>({})
 
 const calculateStreak = (cards: DayCardData[]) => {
   if (cards.length === 0) return 0
@@ -226,6 +229,35 @@ const calculateStreak = (cards: DayCardData[]) => {
   const filteredCards = searchDate
     ? dayCards.filter((card) => card.date.includes(searchDate))
     : dayCards
+
+  useEffect(() => {
+    const viewingCard = dayCards.find((card) => card.date === viewingDate)
+    if (!viewingCard || viewingCard.tasks.length === 0) return
+
+    const completedTasks = viewingCard.tasks.filter((task) => task.completed).length
+    const percentage = Math.round((completedTasks / viewingCard.tasks.length) * 100)
+
+    // Trigger celebration only when progress becomes exactly 100% for this date
+    if (percentage === 100 && !celebratedDates[viewingDate]) {
+      setShowCelebration(true)
+      setIsFadingOut(false)
+      setCelebratedDates((prev) => ({ ...prev, [viewingDate]: true }))
+
+      const fadeTimeout = setTimeout(() => {
+        setIsFadingOut(true)
+      }, 3800)
+
+      const hideTimeout = setTimeout(() => {
+        setShowCelebration(false)
+        setIsFadingOut(false)
+      }, 4500)
+
+      return () => {
+        clearTimeout(fadeTimeout)
+        clearTimeout(hideTimeout)
+      }
+    }
+  }, [dayCards, viewingDate, celebratedDates])
 
   if (!user) return null
 
@@ -563,6 +595,142 @@ const calculateStreak = (cards: DayCardData[]) => {
             </form>
           </DialogContent>
         </Dialog>
+      )}
+
+      {showCelebration && (
+        <div
+          className={`fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm transition-opacity duration-700 ${
+            isFadingOut ? "opacity-0" : "opacity-100"
+          }`}
+        >
+          {/* Close (X) button in the top-right */}
+          <button
+            type="button"
+            onClick={() => {
+              setShowCelebration(false)
+              setIsFadingOut(false)
+            }}
+            className="absolute right-4 top-4 z-20 rounded-full bg-background/80 text-foreground shadow-md border border-border hover:bg-background px-2.5 py-1 flex items-center justify-center"
+          >
+            <X className="h-4 w-4" />
+          </button>
+
+          {/* Full-screen fireworks / crackers */}
+          <div className="pointer-events-none absolute inset-0 overflow-hidden">
+            {Array.from({ length: 10 }).map((_, index) => {
+              const baseLeft = 5 + index * 9
+              return (
+                <div
+                  key={index}
+                  className="absolute firework-launch"
+                  style={{
+                    left: `${baseLeft}%`,
+                    bottom: "-10%",
+                    width: "3px",
+                    height: "80%",
+                  }}
+                >
+                  {/* Rocket trail */}
+                  <div
+                    style={{
+                      position: "absolute",
+                      bottom: "0",
+                      left: "50%",
+                      width: "3px",
+                      height: "60%",
+                      transform: "translateX(-50%)",
+                      background:
+                        "linear-gradient(to top, rgba(234, 179, 8, 0.1), rgba(249, 250, 251, 0.9))",
+                      boxShadow: "0 0 12px rgba(250, 250, 250, 0.9)",
+                      borderRadius: "9999px",
+                    }}
+                  />
+
+                  {/* Burst core */}
+                  <div
+                    className="absolute firework-burst"
+                    style={{
+                      bottom: "55%",
+                      left: "50%",
+                      width: "0.75rem",
+                      height: "0.75rem",
+                      transform: "translate(-50%, 50%)",
+                      borderRadius: "9999px",
+                      background:
+                        "radial-gradient(circle, rgba(250, 250, 250, 1), rgba(251, 191, 36, 1))",
+                      boxShadow:
+                        "0 0 12px rgba(250, 250, 250, 1), 0 0 24px rgba(250, 204, 21, 0.9)",
+                    }}
+                  />
+
+                  {/* Burst rays */}
+                  {Array.from({ length: 12 }).map((_, rayIndex) => {
+                    const angle = (360 / 12) * rayIndex
+                    return (
+                      <span
+                        key={rayIndex}
+                        className="absolute firework-burst"
+                        style={{
+                          bottom: "55%",
+                          left: "50%",
+                          width: "2px",
+                          height: "18px",
+                          transformOrigin: "bottom center",
+                          transform: `translate(-50%, 50%) rotate(${angle}deg)`,
+                          background:
+                            rayIndex % 3 === 0
+                              ? "linear-gradient(to top, rgba(96, 165, 250, 0), rgba(59, 130, 246, 1))"
+                              : rayIndex % 3 === 1
+                              ? "linear-gradient(to top, rgba(52, 211, 153, 0), rgba(16, 185, 129, 1))"
+                              : "linear-gradient(to top, rgba(251, 191, 36, 0), rgba(234, 179, 8, 1))",
+                          boxShadow: "0 0 10px rgba(250, 250, 250, 0.9)",
+                          borderRadius: "9999px",
+                          animationDelay: `${0.15 + index * 0.12}s`,
+                        }}
+                      />
+                    )
+                  })}
+                </div>
+              )
+            })}
+          </div>
+
+          <div className="relative z-10 text-center px-6">
+            {/* Glowing happiness pulse behind the card */}
+            <div className="absolute -inset-20 sm:-inset-28 mx-auto my-auto flex items-center justify-center pointer-events-none">
+              <div className="celebration-pulse" />
+            </div>
+
+            {/* Floating celebration emojis */}
+            <div className="pointer-events-none absolute inset-0 overflow-hidden">
+              {["🎉", "✨", "🎊", "💫"].map((emoji, index) => (
+                <span
+                  key={index}
+                  className="absolute text-2xl sm:text-3xl animate-bounce"
+                  style={{
+                    left: `${20 + index * 15}%`,
+                    top: `${10 + index * 12}%`,
+                    animationDelay: `${index * 0.25}s`,
+                  }}
+                >
+                  {emoji}
+                </span>
+              ))}
+            </div>
+
+            <div className="relative rounded-3xl bg-background/95 shadow-2xl px-6 py-5 sm:px-10 sm:py-8 border border-primary/40">
+              <p className="text-xs sm:text-sm uppercase tracking-[0.18em] text-primary/80 mb-2">
+                You did it!
+              </p>
+              <p className="text-xl sm:text-3xl md:text-4xl font-extrabold text-primary mb-2 sm:mb-3">
+                Congratulations! 100% Complete 🎉
+              </p>
+              <p className="text-xs sm:text-sm text-muted-foreground">
+                This is a huge win. Take a moment and enjoy it.
+              </p>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )
