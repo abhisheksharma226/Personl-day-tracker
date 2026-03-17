@@ -61,6 +61,10 @@ export default function DashboardPage() {
   const [showCelebration, setShowCelebration] = useState(false)
   const [isFadingOut, setIsFadingOut] = useState(false)
   const [celebratedDates, setCelebratedDates] = useState<Record<string, boolean>>({})
+  const [eyeTargetX, setEyeTargetX] = useState(0) // -1..1
+  const [eyeCurrentX, setEyeCurrentX] = useState(0) // -1..1 (smoothed)
+  const [isBlinking, setIsBlinking] = useState(false)
+  const [viewingProgress, setViewingProgress] = useState(0) // 0..1
 
 const calculateStreak = (cards: DayCardData[]) => {
   if (cards.length === 0) return 0
@@ -230,6 +234,80 @@ const calculateStreak = (cards: DayCardData[]) => {
     ? dayCards.filter((card) => card.date.includes(searchDate))
     : dayCards
 
+  // Smooth pupil tracking (feels more "alive")
+  useEffect(() => {
+    let raf = 0
+    const tick = () => {
+      setEyeCurrentX((prev) => prev + (eyeTargetX - prev) * 0.18)
+      raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [eyeTargetX])
+
+  // Natural blinking (random interval)
+  useEffect(() => {
+    let cancelled = false
+    let timeout: number | undefined
+
+    const schedule = () => {
+      const nextInMs = 2200 + Math.random() * 2600
+      timeout = window.setTimeout(() => {
+        if (cancelled) return
+        setIsBlinking(true)
+        window.setTimeout(() => setIsBlinking(false), 120)
+        schedule()
+      }, nextInMs)
+    }
+
+    schedule()
+    return () => {
+      cancelled = true
+      if (timeout) window.clearTimeout(timeout)
+    }
+  }, [])
+
+  // Keep a single source of truth for the "current" progress being viewed (0..1)
+  useEffect(() => {
+    const viewingCard = dayCards.find((card) => card.date === viewingDate)
+    const tasks = viewingCard?.tasks || []
+    if (tasks.length === 0) {
+      setViewingProgress(0)
+      return
+    }
+    const completed = tasks.filter((t) => t.completed).length
+    setViewingProgress(completed / tasks.length)
+  }, [dayCards, viewingDate])
+
+  // Eyes watch the progress bar (not the user): follow the bar's fill position.
+  // Add tiny "saccades" so it feels alive.
+  useEffect(() => {
+    const base = Math.max(-1, Math.min(1, viewingProgress * 2 - 1))
+    setEyeTargetX(base)
+
+    let cancelled = false
+    let timeout: number | undefined
+
+    const scheduleSaccade = () => {
+      const nextInMs = 450 + Math.random() * 850
+      timeout = window.setTimeout(() => {
+        if (cancelled) return
+        const jitter = (Math.random() - 0.5) * 0.22
+        setEyeTargetX(Math.max(-1, Math.min(1, base + jitter)))
+        window.setTimeout(() => {
+          if (!cancelled) setEyeTargetX(base)
+        }, 120 + Math.random() * 160)
+        scheduleSaccade()
+      }, nextInMs)
+    }
+
+    scheduleSaccade()
+    return () => {
+      cancelled = true
+      if (timeout) window.clearTimeout(timeout)
+    }
+  }, [viewingProgress])
+
   useEffect(() => {
     const viewingCard = dayCards.find((card) => card.date === viewingDate)
     if (!viewingCard || viewingCard.tasks.length === 0) return
@@ -346,6 +424,7 @@ const calculateStreak = (cards: DayCardData[]) => {
               const viewingCard = dayCards.find(card => card.date === viewingDate)
               const viewingTasks = viewingCard?.tasks || []
               const completedTasks = viewingTasks.filter(task => task.completed).length
+              const percentage = Math.round(viewingTasks.length > 0 ? (completedTasks / viewingTasks.length) * 100 : 0)
               return (
                 <>
                   <div className="mt-4 grid grid-cols-2 gap-3">
@@ -360,14 +439,70 @@ const calculateStreak = (cards: DayCardData[]) => {
                   </div>
                   {viewingTasks.length > 0 && (
                     <div className="mt-4">
-                      <div className="bg-muted rounded-full h-2 overflow-hidden">
-                        <div 
+                      <div className="flex items-center justify-between gap-3 mb-2">
+                        <p className="text-xs text-muted-foreground">
+                          Progress
+                        </p>
+
+                        {/* Realistic “watching” eyes */}
+                        <div className="flex items-center gap-1.5 select-none">
+                          {Array.from({ length: 2 }).map((_, eyeIdx) => (
+                            <div
+                              key={eyeIdx}
+                              className="relative w-7 h-4.5 rounded-full border border-border shadow-sm overflow-hidden bg-white/90"
+                              style={{
+                                transform: `scaleY(${isBlinking ? 0.12 : 1})`,
+                                transition: "transform 90ms ease-in-out",
+                              }}
+                            >
+                              {/* subtle sclera shading */}
+                              <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,1),rgba(241,245,249,1))]" />
+                              {/* iris */}
+                              <div
+                                className="absolute left-1/2 top-1/2 w-3 h-3 rounded-full"
+                                style={{
+                                  transform: `translate(calc(-50% + ${(eyeCurrentX * 4) + (eyeIdx === 0 ? -0.6 : 0.6)}px), -50%)`,
+                                  background:
+                                    "radial-gradient(circle at 30% 30%, rgba(34,197,94,1), rgba(21,128,61,1) 55%, rgba(20,83,45,1) 100%)",
+                                  boxShadow: "0 0 10px rgba(34,197,94,0.35)",
+                                }}
+                              >
+                                {/* pupil */}
+                                <div
+                                  className="absolute left-1/2 top-1/2 w-1.5 h-1.5 rounded-full"
+                                  style={{
+                                    transform: "translate(-50%, -50%)",
+                                    background: "rgba(2,6,23,0.92)",
+                                  }}
+                                />
+                                {/* specular highlights */}
+                                <div
+                                  className="absolute left-[25%] top-[22%] w-1 h-1 rounded-full"
+                                  style={{ background: "rgba(255,255,255,0.95)" }}
+                                />
+                                <div
+                                  className="absolute left-[40%] top-[40%] w-[3px] h-[3px] rounded-full"
+                                  style={{ background: "rgba(255,255,255,0.55)" }}
+                                />
+                              </div>
+
+                              {/* subtle eyelid shadow */}
+                              <div className="absolute inset-x-0 top-0 h-[40%] bg-[linear-gradient(to_bottom,rgba(15,23,42,0.16),rgba(15,23,42,0))]" />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div
+                        className="bg-muted rounded-full h-2 overflow-hidden"
+                      >
+                        <div
                           className="bg-gradient-to-r from-primary to-primary/80 h-2 rounded-full transition-all duration-300"
                           style={{ width: `${viewingTasks.length > 0 ? (completedTasks / viewingTasks.length) * 100 : 0}%` }}
                         />
                       </div>
                       <p className="text-xs text-muted-foreground mt-2 text-center">
-                        {Math.round(viewingTasks.length > 0 ? (completedTasks / viewingTasks.length) * 100 : 0)}% complete
+                        {percentage}% complete
                       </p>
                     </div>
                   )}
