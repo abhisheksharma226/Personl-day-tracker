@@ -54,6 +54,7 @@ export default function DashboardPage() {
   const [isDeletingTask, setIsDeletingTask] = useState(false)
   const [isAddingTasks, setIsAddingTasks] = useState(false)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
+  const [isRefreshingTasks, setIsRefreshingTasks] = useState(false)
 
   const [points, setPoints] = useState(0)
   const [streak, setStreak] = useState(0)
@@ -108,11 +109,14 @@ const calculateStreak = (cards: DayCardData[]) => {
 
     const parsedUser = JSON.parse(currentUser)
     setUser(parsedUser)
-    loadTasks(parsedUser.id)
+    loadTasks(parsedUser.id, { initial: true })
   }, [router])
 
-  const loadTasks = async (userId: string) => {
-    setIsLoadingTasks(true)
+  const loadTasks = async (userId: string, opts?: { initial?: boolean }) => {
+    const shouldShowFullLoading = Boolean(opts?.initial) && dayCards.length === 0
+    if (shouldShowFullLoading) setIsLoadingTasks(true)
+    else setIsRefreshingTasks(true)
+
     const res = await fetch(`${API_ENDPOINTS.tasks}/${userId}`)
     const data = await res.json()
     
@@ -153,8 +157,8 @@ const calculateStreak = (cards: DayCardData[]) => {
     const calculatedStreak = calculateStreak(cards)
     setStreak(calculatedStreak)
 
-
-    setIsLoadingTasks(false)
+    if (shouldShowFullLoading) setIsLoadingTasks(false)
+    setIsRefreshingTasks(false)
   }
 
   const handleAddTasks = async (date: string, tasks: any[]) => {
@@ -636,17 +640,25 @@ const calculateStreak = (cards: DayCardData[]) => {
                 </Button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {filteredCards.map((card) => (
-                  <DayCard
-                    key={card.date}
-                    date={card.date}
-                    tasks={card.tasks}
-                    onToggleTask={(taskId) => handleToggleTask(card.date, taskId)}
-                    onDeleteTask={(taskId) => handleDeleteTask(card.date, taskId)}
-                    onEditTask={(taskId) => handleEditTask(card.date, taskId)}
-                  />
-                ))}
+              <div className="space-y-4">
+                {isRefreshingTasks && (
+                  <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                    <Spinner size="sm" />
+                    Updating…
+                  </div>
+                )}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  {filteredCards.map((card) => (
+                    <DayCard
+                      key={card.date}
+                      date={card.date}
+                      tasks={card.tasks}
+                      onToggleTask={(taskId) => handleToggleTask(card.date, taskId)}
+                      onDeleteTask={(taskId) => handleDeleteTask(card.date, taskId)}
+                      onEditTask={(taskId) => handleEditTask(card.date, taskId)}
+                    />
+                  ))}
+                </div>
               </div>
             )}
           </div>
