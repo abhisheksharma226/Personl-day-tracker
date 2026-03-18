@@ -50,11 +50,9 @@ export default function DashboardPage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [isLoadingTasks, setIsLoadingTasks] = useState(true) // ✅ loading tasks
   const [isSavingEdit, setIsSavingEdit] = useState(false) // ✅ saving edit
-  const [isTogglingTask, setIsTogglingTask] = useState(false)
-  const [isDeletingTask, setIsDeletingTask] = useState(false)
+  const [togglingTaskId, setTogglingTaskId] = useState<string | null>(null)
   const [isAddingTasks, setIsAddingTasks] = useState(false)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
-  const [isRefreshingTasks, setIsRefreshingTasks] = useState(false)
 
   const [points, setPoints] = useState(0)
   const [streak, setStreak] = useState(0)
@@ -109,14 +107,12 @@ const calculateStreak = (cards: DayCardData[]) => {
 
     const parsedUser = JSON.parse(currentUser)
     setUser(parsedUser)
-    loadTasks(parsedUser.id, { initial: true })
+    loadTasks(parsedUser.id, { showGlobalSpinner: true })
   }, [router])
 
-  const loadTasks = async (userId: string, opts?: { initial?: boolean }) => {
-    const shouldShowFullLoading = Boolean(opts?.initial) && dayCards.length === 0
-    if (shouldShowFullLoading) setIsLoadingTasks(true)
-    else setIsRefreshingTasks(true)
-
+  const loadTasks = async (userId: string, opts?: { showGlobalSpinner?: boolean }) => {
+    const showGlobalSpinner = opts?.showGlobalSpinner ?? false
+    if (showGlobalSpinner) setIsLoadingTasks(true)
     const res = await fetch(`${API_ENDPOINTS.tasks}/${userId}`)
     const data = await res.json()
     
@@ -157,8 +153,8 @@ const calculateStreak = (cards: DayCardData[]) => {
     const calculatedStreak = calculateStreak(cards)
     setStreak(calculatedStreak)
 
-    if (shouldShowFullLoading) setIsLoadingTasks(false)
-    setIsRefreshingTasks(false)
+
+    if (showGlobalSpinner) setIsLoadingTasks(false)
   }
 
   const handleAddTasks = async (date: string, tasks: any[]) => {
@@ -179,17 +175,15 @@ const calculateStreak = (cards: DayCardData[]) => {
   }
 
   const handleToggleTask = async (_: string, taskId: string) => {
-    setIsTogglingTask(true)
+    setTogglingTaskId(taskId)
     await fetch(`${API_ENDPOINTS.tasks}/${taskId}/toggle`, { method: "PATCH" })
     await loadTasks(user!.id)
-    setIsTogglingTask(false)
+    setTogglingTaskId(null)
   }
 
   const handleDeleteTask = async (_: string, taskId: string) => {
-    setIsDeletingTask(true)
     await fetch(`${API_ENDPOINTS.tasks}/${taskId}`, { method: "DELETE" })
     await loadTasks(user!.id)
-    setIsDeletingTask(false)
   }
 
   const handleEditTask = (cardDate: string, taskId: string) => {
@@ -640,25 +634,18 @@ const calculateStreak = (cards: DayCardData[]) => {
                 </Button>
               </div>
             ) : (
-              <div className="space-y-4">
-                {isRefreshingTasks && (
-                  <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                    <Spinner size="sm" />
-                    Updating…
-                  </div>
-                )}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                  {filteredCards.map((card) => (
-                    <DayCard
-                      key={card.date}
-                      date={card.date}
-                      tasks={card.tasks}
-                      onToggleTask={(taskId) => handleToggleTask(card.date, taskId)}
-                      onDeleteTask={(taskId) => handleDeleteTask(card.date, taskId)}
-                      onEditTask={(taskId) => handleEditTask(card.date, taskId)}
-                    />
-                  ))}
-                </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {filteredCards.map((card) => (
+                  <DayCard
+                    key={card.date}
+                    date={card.date}
+                    tasks={card.tasks}
+                    onToggleTask={(taskId) => handleToggleTask(card.date, taskId)}
+                    onDeleteTask={(taskId) => handleDeleteTask(card.date, taskId)}
+                    onEditTask={(taskId) => handleEditTask(card.date, taskId)}
+                    togglingTaskId={togglingTaskId}
+                  />
+                ))}
               </div>
             )}
           </div>

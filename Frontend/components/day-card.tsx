@@ -21,9 +21,10 @@ interface DayCardProps {
   onToggleTask: (taskId: string) => void
   onDeleteTask: (taskId: string) => void
   onEditTask: (taskId: string) => void
+  togglingTaskId?: string | null
 }
 
-export function DayCard({ date, tasks, onToggleTask, onDeleteTask, onEditTask }: DayCardProps) {
+export function DayCard({ date, tasks, onToggleTask, onDeleteTask, onEditTask, togglingTaskId }: DayCardProps) {
   const formattedDate = new Date(date).toLocaleDateString("en-US", {
     weekday: "short",
     year: "numeric",
@@ -69,8 +70,11 @@ export function DayCard({ date, tasks, onToggleTask, onDeleteTask, onEditTask }:
                 checked={task.completed}
                 onCheckedChange={() => onToggleTask(task.id)}
                 className="mt-1"
-                disabled={deletingTaskId === task.id}
+                disabled={deletingTaskId === task.id || togglingTaskId === task.id}
               />
+              {togglingTaskId === task.id && (
+                <Spinner size="sm" className="mt-1 h-4 w-4" />
+              )}
               <label
                 htmlFor={task.id}
                 className={`flex-1 text-sm cursor-pointer ${task.completed ? "line-through text-muted-foreground" : ""}`}
