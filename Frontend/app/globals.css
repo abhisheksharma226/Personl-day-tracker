@@ -170,6 +170,156 @@
   will-change: transform, opacity;
 }
 
+@keyframes rocket-orbit {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(-28deg) scale(0.9);
+    opacity: 0;
+  }
+  6% {
+    opacity: 1;
+  }
+  20% {
+    transform: translate3d(18vw, -52vh, 0) rotate(-8deg) scale(1);
+  }
+  38% {
+    transform: translate3d(53vw, -40vh, 0) rotate(48deg) scale(1);
+  }
+  58% {
+    transform: translate3d(36vw, -6vh, 0) rotate(132deg) scale(1);
+  }
+  78% {
+    transform: translate3d(8vw, -30vh, 0) rotate(230deg) scale(1);
+  }
+  100% {
+    transform: translate3d(33vw, -24vh, 0) rotate(320deg) scale(1.04);
+    opacity: 1;
+  }
+}
+
+@keyframes rocket-trail {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scaleY(0.7);
+  }
+  50% {
+    opacity: 0.95;
+    transform: scaleY(1.2);
+  }
+}
+
+@keyframes screen-spark {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(var(--spark-rot, 0deg)) scale(0.2);
+    opacity: 0;
+  }
+  8% {
+    opacity: 1;
+  }
+  65% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(var(--sx, 0px), var(--sy, 0px), 0) rotate(var(--spark-rot, 0deg)) scale(1);
+    opacity: 0;
+  }
+}
+
+.rocket-orbit {
+  position: absolute;
+  left: 18%;
+  top: 78%;
+  width: 38px;
+  height: 38px;
+  animation: rocket-orbit 5s cubic-bezier(0.22, 0.7, 0.2, 1) forwards;
+  z-index: 12;
+  will-change: transform, opacity;
+}
+
+.rocket-body {
+  position: absolute;
+  left: 7px;
+  top: 7px;
+  width: 24px;
+  height: 24px;
+  border-radius: 14px 14px 9px 9px;
+  background: linear-gradient(160deg, #f8fafc 5%, #dbeafe 45%, #93c5fd 100%);
+  border: 1px solid rgba(59, 130, 246, 0.55);
+  transform: rotate(45deg);
+  box-shadow: 0 0 12px rgba(96, 165, 250, 0.45);
+}
+
+.rocket-trail {
+  position: absolute;
+  left: -34px;
+  top: 50%;
+  width: 36px;
+  height: 8px;
+  transform: translateY(-50%);
+  border-radius: 999px;
+  background: linear-gradient(to left, rgba(254, 240, 138, 0.9), rgba(251, 146, 60, 0.2), transparent);
+  filter: blur(1px);
+  animation: rocket-trail 0.18s ease-in-out infinite;
+}
+
+.rocket-window {
+  position: absolute;
+  left: 9px;
+  top: 4px;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: radial-gradient(circle at 30% 30%, #ffffff, #38bdf8);
+  box-shadow: 0 0 6px rgba(56, 189, 248, 0.75);
+}
+
+.rocket-fin {
+  position: absolute;
+  bottom: 2px;
+  width: 6px;
+  height: 7px;
+  background: linear-gradient(to top, #f97316, #fb7185);
+  border-radius: 2px;
+}
+
+.rocket-fin-left {
+  left: -3px;
+  transform: rotate(-24deg);
+}
+
+.rocket-fin-right {
+  right: -3px;
+  transform: rotate(24deg);
+}
+
+.screen-spark-streak {
+  --sx: 0px;
+  --sy: 0px;
+  --spark-rot: 0deg;
+  --spark-color: rgba(56, 189, 248, 0.95);
+  position: absolute;
+  width: 3px;
+  height: 24px;
+  border-radius: 999px;
+  background: linear-gradient(to top, rgba(255, 255, 255, 0), var(--spark-color), rgba(255, 255, 255, 0.95));
+  box-shadow: 0 0 12px var(--spark-color), 0 0 22px color-mix(in srgb, var(--spark-color) 75%, white 25%);
+  animation: screen-spark 1.1s cubic-bezier(0.15, 0.7, 0.2, 1) forwards;
+}
+
+.screen-spark-dot {
+  --sx: 0px;
+  --sy: 0px;
+  --spark-rot: 0deg;
+  --spark-color: rgba(56, 189, 248, 0.95);
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 1), var(--spark-color));
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.95), 0 0 22px var(--spark-color);
+  animation: screen-spark 1.2s ease-out forwards;
+}
+
 @keyframes eye-blink {
   0%,
   92%,

@@ -321,12 +321,12 @@ const calculateStreak = (cards: DayCardData[]) => {
 
       const fadeTimeout = setTimeout(() => {
         setIsFadingOut(true)
-      }, 3800)
+      }, 5600)
 
       const hideTimeout = setTimeout(() => {
         setShowCelebration(false)
         setIsFadingOut(false)
-      }, 4500)
+      }, 6300)
 
       return () => {
         clearTimeout(fadeTimeout)
@@ -749,82 +749,50 @@ const calculateStreak = (cards: DayCardData[]) => {
             <X className="h-4 w-4" />
           </button>
 
-          {/* Full-screen fireworks / crackers */}
+          {/* Rocket launch + full-screen spark blast */}
           <div className="pointer-events-none absolute inset-0 overflow-hidden">
-            {Array.from({ length: 10 }).map((_, index) => {
-              const baseLeft = 5 + index * 9
+            <div className="rocket-orbit">
+              <div className="rocket-trail" />
+              <div className="rocket-body">
+                <span className="rocket-window" />
+                <span className="rocket-fin rocket-fin-left" />
+                <span className="rocket-fin rocket-fin-right" />
+              </div>
+            </div>
+
+            {/* Birthday blaster: center burst with streaks and spark dots */}
+            {Array.from({ length: 220 }).map((_, index) => {
+              const angle = (index / 220) * Math.PI * 2
+              const distance = 220 + (index % 11) * 24
+              const dx = Math.cos(angle) * distance
+              const dy = Math.sin(angle) * distance
+              const color =
+                index % 6 === 0
+                  ? "rgba(244, 63, 94, 0.98)"
+                  : index % 6 === 1
+                  ? "rgba(251, 191, 36, 0.98)"
+                  : index % 6 === 2
+                  ? "rgba(34, 197, 94, 0.98)"
+                  : index % 6 === 3
+                  ? "rgba(59, 130, 246, 0.98)"
+                  : index % 6 === 4
+                  ? "rgba(168, 85, 247, 0.98)"
+                  : "rgba(236, 72, 153, 0.98)"
+
               return (
-                <div
+                <span
                   key={index}
-                  className="absolute firework-launch"
+                  className={index % 3 === 0 ? "screen-spark-dot" : "screen-spark-streak"}
                   style={{
-                    left: `${baseLeft}%`,
-                    bottom: "-10%",
-                    width: "3px",
-                    height: "80%",
+                    left: "50%",
+                    top: "50%",
+                    animationDelay: `${5 + (index % 14) * 0.018}s`,
+                    ["--sx" as string]: `${dx}px`,
+                    ["--sy" as string]: `${dy}px`,
+                    ["--spark-color" as string]: color,
+                    ["--spark-rot" as string]: `${(angle * 180) / Math.PI}deg`,
                   }}
-                >
-                  {/* Rocket trail */}
-                  <div
-                    style={{
-                      position: "absolute",
-                      bottom: "0",
-                      left: "50%",
-                      width: "3px",
-                      height: "60%",
-                      transform: "translateX(-50%)",
-                      background:
-                        "linear-gradient(to top, rgba(234, 179, 8, 0.1), rgba(249, 250, 251, 0.9))",
-                      boxShadow: "0 0 12px rgba(250, 250, 250, 0.9)",
-                      borderRadius: "9999px",
-                    }}
-                  />
-
-                  {/* Burst core */}
-                  <div
-                    className="absolute firework-burst"
-                    style={{
-                      bottom: "55%",
-                      left: "50%",
-                      width: "0.75rem",
-                      height: "0.75rem",
-                      transform: "translate(-50%, 50%)",
-                      borderRadius: "9999px",
-                      background:
-                        "radial-gradient(circle, rgba(250, 250, 250, 1), rgba(251, 191, 36, 1))",
-                      boxShadow:
-                        "0 0 12px rgba(250, 250, 250, 1), 0 0 24px rgba(250, 204, 21, 0.9)",
-                    }}
-                  />
-
-                  {/* Burst rays */}
-                  {Array.from({ length: 12 }).map((_, rayIndex) => {
-                    const angle = (360 / 12) * rayIndex
-                    return (
-                      <span
-                        key={rayIndex}
-                        className="absolute firework-burst"
-                        style={{
-                          bottom: "55%",
-                          left: "50%",
-                          width: "2px",
-                          height: "18px",
-                          transformOrigin: "bottom center",
-                          transform: `translate(-50%, 50%) rotate(${angle}deg)`,
-                          background:
-                            rayIndex % 3 === 0
-                              ? "linear-gradient(to top, rgba(96, 165, 250, 0), rgba(59, 130, 246, 1))"
-                              : rayIndex % 3 === 1
-                              ? "linear-gradient(to top, rgba(52, 211, 153, 0), rgba(16, 185, 129, 1))"
-                              : "linear-gradient(to top, rgba(251, 191, 36, 0), rgba(234, 179, 8, 1))",
-                          boxShadow: "0 0 10px rgba(250, 250, 250, 0.9)",
-                          borderRadius: "9999px",
-                          animationDelay: `${0.15 + index * 0.12}s`,
-                        }}
-                      />
-                    )
-                  })}
-                </div>
+                />
               )
             })}
           </div>
