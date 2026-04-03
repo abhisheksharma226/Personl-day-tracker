@@ -16,22 +16,17 @@ import {
 import { CalendarDays, LogOut, Plus, Search, Menu, X, ChevronLeft, ChevronRight } from "lucide-react"
 import { DayCard } from "@/components/day-card"
 import { AddTaskModal } from "@/components/add-task-modal"
+import { KanbanBoard } from "@/components/kanban-board"
 import { API_ENDPOINTS } from "@/lib/api"
 import { Spinner } from "@/components/ui/spinner" // ✅ added spinner
 import { getLocalIsoDate } from "@/lib/utils"
+import type { KanbanStatus, Task } from "@/lib/task-types"
+import { normalizeTaskStatus } from "@/lib/task-types"
 
 interface User {
   id: string
   name: string
   email: string
-}
-
-interface Task {
-  id: string
-  text: string
-  completed: boolean
-  startTime: string
-  endTime: string
 }
 
 interface DayCardData {
@@ -51,6 +46,7 @@ export default function DashboardPage() {
   const [isLoadingTasks, setIsLoadingTasks] = useState(true) // ✅ loading tasks
   const [isSavingEdit, setIsSavingEdit] = useState(false) // ✅ saving edit
   const [togglingTaskId, setTogglingTaskId] = useState<string | null>(null)
+  const [kanbanMovingId, setKanbanMovingId] = useState<string | null>(null)
   const [isAddingTasks, setIsAddingTasks] = useState(false)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
 
@@ -126,6 +122,7 @@ const calculateStreak = (cards: DayCardData[]) => {
         completed: t.completed,
         startTime: t.startTime,
         endTime: t.endTime,
+        status: normalizeTaskStatus(t),
       })
 
       // 🔥 sort tasks by startTime (earliest first)
@@ -184,6 +181,18 @@ const calculateStreak = (cards: DayCardData[]) => {
   const handleDeleteTask = async (_: string, taskId: string) => {
     await fetch(`${API_ENDPOINTS.tasks}/${taskId}`, { method: "DELETE" })
     await loadTasks(user!.id)
+  }
+
+  const handleKanbanStatusChange = async (taskId: string, status: KanbanStatus) => {
+    if (!user) return
+    setKanbanMovingId(taskId)
+    await fetch(`${API_ENDPOINTS.tasks}/${taskId}/status`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status }),
+    })
+    await loadTasks(user.id)
+    setKanbanMovingId(null)
   }
 
   const handleEditTask = (cardDate: string, taskId: string) => {
@@ -617,6 +626,15 @@ const calculateStreak = (cards: DayCardData[]) => {
             </div>
           </div>
 
+          {!isLoadingTasks && (
+            <KanbanBoard
+              tasks={dayCards.find((c) => c.date === viewingDate)?.tasks ?? []}
+              dateLabel={formatDate(new Date(viewingDate))}
+              onStatusChange={handleKanbanStatusChange}
+              movingTaskId={kanbanMovingId}
+            />
+          )}
+
           {/* Task Cards Grid */}
           <div className="flex-1 overflow-auto">
             {isLoadingTasks ? (
@@ -652,7 +670,12 @@ const calculateStreak = (cards: DayCardData[]) => {
         </div>
       </main>
 
-      <AddTaskModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onAddTasks={handleAddTasks} />
+      <AddTaskModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onAddTasks={handleAddTasks}
+        defaultDate={viewingDate}
+      />
 
       {editingTask && (
         <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>

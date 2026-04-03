@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -22,6 +22,8 @@ interface AddTaskModalProps {
   isOpen: boolean
   onClose: () => void
   onAddTasks: (date: string, tasks: Array<{ text: string; startTime: string; endTime: string }>) => void
+  /** When set, opening the modal pre-fills the date (e.g. sidebar “viewing” day). */
+  defaultDate?: string
 }
 
 interface TaskInput {
@@ -30,9 +32,15 @@ interface TaskInput {
   endTime: string
 }
 
-export function AddTaskModal({ isOpen, onClose, onAddTasks }: AddTaskModalProps) {
+export function AddTaskModal({ isOpen, onClose, onAddTasks, defaultDate }: AddTaskModalProps) {
   const today = getLocalIsoDate()
-  const [date, setDate] = useState(today)
+  const [date, setDate] = useState(defaultDate ?? today)
+
+  useEffect(() => {
+    if (isOpen) {
+      setDate(defaultDate ?? today)
+    }
+  }, [isOpen, defaultDate, today])
   const [tasks, setTasks] = useState<TaskInput[]>([{ text: "", startTime: "09:00", endTime: "10:00" }])
   const [isSaving, setIsSaving] = useState(false)
 
@@ -64,14 +72,14 @@ export function AddTaskModal({ isOpen, onClose, onAddTasks }: AddTaskModalProps)
 
     onAddTasks(date, validTasks)
 
-    setDate(today)
+    setDate(defaultDate ?? today)
     setTasks([{ text: "", startTime: "09:00", endTime: "10:00" }])
     setIsSaving(false)
     onClose()
   }
 
   const handleClose = () => {
-    setDate(today)
+    setDate(defaultDate ?? today)
     setTasks([{ text: "", startTime: "09:00", endTime: "10:00" }])
     onClose()
   }

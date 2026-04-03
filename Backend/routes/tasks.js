@@ -24,6 +24,8 @@ router.post("/", async (req, res) => {
         text: t.text,
         startTime: t.startTime,
         endTime: t.endTime,
+        completed: false,
+        status: "todo",
       }))
     )
 
@@ -38,10 +40,29 @@ router.patch("/:id/toggle", async (req, res) => {
   try {
     const task = await Task.findById(req.params.id)
     task.completed = !task.completed
+    task.status = task.completed ? "done" : "todo"
     await task.save()
     res.json(task)
   } catch (err) {
     res.status(500).json({ message: "Toggle failed" })
+  }
+})
+
+// PATCH kanban / workflow status (keeps completed in sync)
+router.patch("/:id/status", async (req, res) => {
+  try {
+    const { status } = req.body
+    if (!["todo", "in_progress", "done"].includes(status)) {
+      return res.status(400).json({ message: "Invalid status" })
+    }
+    const task = await Task.findById(req.params.id)
+    if (!task) return res.status(404).json({ message: "Not found" })
+    task.status = status
+    task.completed = status === "done"
+    await task.save()
+    res.json(task)
+  } catch (err) {
+    res.status(500).json({ message: "Status update failed" })
   }
 })
 

@@ -6,14 +6,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Button } from "@/components/ui/button"
 import { Trash2, Pencil, Clock } from "lucide-react"
 import { Spinner } from "@/components/ui/spinner"
-
-interface Task {
-  id: string
-  text: string
-  completed: boolean
-  startTime: string
-  endTime: string
-}
+import type { Task } from "@/lib/task-types"
 
 interface DayCardProps {
   date: string
