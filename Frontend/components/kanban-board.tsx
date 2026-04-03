@@ -51,7 +51,7 @@ export function KanbanBoard({ tasks, dateLabel, onStatusChange, movingTaskId }: 
     <section className="mb-8" aria-label="Kanban board">
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2 mb-4">
         <div>
-          <h3 className="text-lg font-semibold tracking-tight">Board</h3>
+          <h3 className="text-lg font-semibold tracking-tight">Kanban Board</h3>
           <p className="text-sm text-muted-foreground">{dateLabel} — drag tasks between columns</p>
         </div>
       </div>
