@@ -383,7 +383,7 @@ const calculateStreak = (cards: DayCardData[]) => {
             <div className="bg-primary rounded-lg p-2">
               <CalendarDays className="h-5 w-5 text-primary-foreground" />
             </div>
-            <h1 className="text-xl font-bold">DayCard</h1>
+            <h1 className="text-xl font-bold">Assign Board</h1>
           </div>
           <div className="space-y-1">
             <p className="font-semibold text-foreground">{user.name}</p>

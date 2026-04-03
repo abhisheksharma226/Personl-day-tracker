@@ -8,7 +8,7 @@ const _geist = Geist({ subsets: ["latin"] })
 const _geistMono = Geist_Mono({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "DayCard | Daily Task Tracker",
+  title: "TaskDeck | Assignments manager",
   description: "Your minimal daily task tracker. One card per day, all your tasks organized.",
   generator: "Abhishek Sharma",
   icons: {

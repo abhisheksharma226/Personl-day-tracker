@@ -12,7 +12,7 @@ export default function LandingPage() {
               <CalendarDays className="h-8 w-8 text-primary-foreground" />
             </div>
           </div>
-          <h1 className="text-5xl md:text-6xl font-bold tracking-tight text-balance">DayCard</h1>
+          <h1 className="text-5xl md:text-6xl font-bold tracking-tight text-balance">TaskDeck</h1>
           <p className="text-xl text-muted-foreground text-balance">
             Your minimal daily task tracker. One card per day, all your tasks organized.
           </p>
