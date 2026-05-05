@@ -36,6 +36,8 @@ interface DayCardData {
 
 export default function DashboardPage() {
   const router = useRouter()
+  const INITIAL_VISIBLE_DAY_CARDS = 10
+  const LOAD_MORE_DAY_CARDS_STEP = 10
 
   const [user, setUser] = useState<User | null>(null)
   const [dayCards, setDayCards] = useState<DayCardData[]>([])
@@ -56,6 +58,7 @@ export default function DashboardPage() {
   const [showCelebration, setShowCelebration] = useState(false)
   const [isFadingOut, setIsFadingOut] = useState(false)
   const [celebratedDates, setCelebratedDates] = useState<Record<string, boolean>>({})
+  const [visibleDayCardsCount, setVisibleDayCardsCount] = useState(INITIAL_VISIBLE_DAY_CARDS)
   const [eyeTargetX, setEyeTargetX] = useState(0) // -1..1
   const [eyeCurrentX, setEyeCurrentX] = useState(0) // -1..1 (smoothed)
   const [isBlinking, setIsBlinking] = useState(false)
@@ -240,6 +243,8 @@ const calculateStreak = (cards: DayCardData[]) => {
   const filteredCards = searchDate
     ? dayCards.filter((card) => card.date.includes(searchDate))
     : dayCards
+  const visibleCards = filteredCards.slice(0, visibleDayCardsCount)
+  const hasMoreCardsToLoad = filteredCards.length > visibleCards.length
 
   // Smooth pupil tracking (feels more "alive")
   useEffect(() => {
@@ -343,6 +348,10 @@ const calculateStreak = (cards: DayCardData[]) => {
       }
     }
   }, [dayCards, viewingDate, celebratedDates])
+
+  useEffect(() => {
+    setVisibleDayCardsCount(INITIAL_VISIBLE_DAY_CARDS)
+  }, [searchDate, dayCards.length])
 
   if (!user) return null
 
@@ -652,18 +661,33 @@ const calculateStreak = (cards: DayCardData[]) => {
                 </Button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {filteredCards.map((card) => (
-                  <DayCard
-                    key={card.date}
-                    date={card.date}
-                    tasks={card.tasks}
-                    onToggleTask={(taskId) => handleToggleTask(card.date, taskId)}
-                    onDeleteTask={(taskId) => handleDeleteTask(card.date, taskId)}
-                    onEditTask={(taskId) => handleEditTask(card.date, taskId)}
-                    togglingTaskId={togglingTaskId}
-                  />
-                ))}
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  {visibleCards.map((card) => (
+                    <DayCard
+                      key={card.date}
+                      date={card.date}
+                      tasks={card.tasks}
+                      onToggleTask={(taskId) => handleToggleTask(card.date, taskId)}
+                      onDeleteTask={(taskId) => handleDeleteTask(card.date, taskId)}
+                      onEditTask={(taskId) => handleEditTask(card.date, taskId)}
+                      togglingTaskId={togglingTaskId}
+                    />
+                  ))}
+                </div>
+
+                {hasMoreCardsToLoad && (
+                  <div className="flex justify-center">
+                    <Button
+                      variant="outline"
+                      onClick={() =>
+                        setVisibleDayCardsCount((prev) => prev + LOAD_MORE_DAY_CARDS_STEP)
+                      }
+                    >
+                      Load More
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
           </div>
