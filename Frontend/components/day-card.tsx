@@ -4,7 +4,7 @@ import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Button } from "@/components/ui/button"
-import { Trash2, Pencil, Clock } from "lucide-react"
+import { Trash2, Pencil, Clock, Copy } from "lucide-react"
 import { Spinner } from "@/components/ui/spinner"
 import type { Task } from "@/lib/task-types"
 
@@ -14,10 +14,21 @@ interface DayCardProps {
   onToggleTask: (taskId: string) => void
   onDeleteTask: (taskId: string) => void
   onEditTask: (taskId: string) => void
+  onCloneCard: (date: string) => void
   togglingTaskId?: string | null
+  isCloning?: boolean
 }
 
-export function DayCard({ date, tasks, onToggleTask, onDeleteTask, onEditTask, togglingTaskId }: DayCardProps) {
+export function DayCard({
+  date,
+  tasks,
+  onToggleTask,
+  onDeleteTask,
+  onEditTask,
+  onCloneCard,
+  togglingTaskId,
+  isCloning = false,
+}: DayCardProps) {
   const formattedDate = new Date(date).toLocaleDateString("en-US", {
     weekday: "short",
     year: "numeric",
@@ -47,12 +58,30 @@ export function DayCard({ date, tasks, onToggleTask, onDeleteTask, onEditTask, t
   return (
     <Card className="hover:shadow-lg transition-shadow">
       <CardHeader className="pb-3">
-        <CardTitle className="text-lg flex items-center justify-between">
-          <span className="text-balance">{formattedDate}</span>
-          <span className="text-xs font-normal text-muted-foreground">
-            {completedCount}/{tasks.length}
-          </span>
-        </CardTitle>
+        <div className="flex items-center justify-between gap-2">
+          <CardTitle className="text-lg flex items-center justify-between flex-1 min-w-0">
+            <span className="text-balance">{formattedDate}</span>
+            <span className="text-xs font-normal text-muted-foreground">
+              {completedCount}/{tasks.length}
+            </span>
+          </CardTitle>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 px-2 text-xs shrink-0"
+            onClick={() => onCloneCard(date)}
+            disabled={isCloning || tasks.length === 0}
+          >
+            {isCloning ? (
+              <Spinner size="sm" className="h-3 w-3" />
+            ) : (
+              <>
+                <Copy className="h-3 w-3 mr-1" />
+                Clone
+              </>
+            )}
+          </Button>
+        </div>
       </CardHeader>
       <CardContent className="space-y-3">
         {tasks.map((task) => (

@@ -44,11 +44,16 @@ export default function DashboardPage() {
   const [searchDate, setSearchDate] = useState("")
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [isCloneModalOpen, setIsCloneModalOpen] = useState(false)
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [isLoadingTasks, setIsLoadingTasks] = useState(true) // ✅ loading tasks
   const [isSavingEdit, setIsSavingEdit] = useState(false) // ✅ saving edit
   const [togglingTaskId, setTogglingTaskId] = useState<string | null>(null)
   const [kanbanMovingId, setKanbanMovingId] = useState<string | null>(null)
+  const [cloningCardDate, setCloningCardDate] = useState<string | null>(null)
+  const [cloneSourceDate, setCloneSourceDate] = useState<string | null>(null)
+  const [cloneTargetDate, setCloneTargetDate] = useState<string>("")
+  const [cloneError, setCloneError] = useState<string>("")
   const [isAddingTasks, setIsAddingTasks] = useState(false)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
 
@@ -184,6 +189,57 @@ const calculateStreak = (cards: DayCardData[]) => {
   const handleDeleteTask = async (_: string, taskId: string) => {
     await fetch(`${API_ENDPOINTS.tasks}/${taskId}`, { method: "DELETE" })
     await loadTasks(user!.id)
+  }
+
+  const openCloneModal = (sourceDate: string) => {
+    const suggestedDate = sourceDate === getLocalIsoDate() ? "" : getLocalIsoDate()
+    setCloneSourceDate(sourceDate)
+    setCloneTargetDate(suggestedDate)
+    setCloneError("")
+    setIsCloneModalOpen(true)
+  }
+
+  const handleCloneDayCard = async () => {
+    if (!user || !cloneSourceDate) return
+    const sourceCard = dayCards.find((card) => card.date === cloneSourceDate)
+    if (!sourceCard || sourceCard.tasks.length === 0) return
+
+    if (!cloneTargetDate.trim()) {
+      setCloneError("Pick a target date to clone tasks.")
+      return
+    }
+
+    const isIsoDate = /^\d{4}-\d{2}-\d{2}$/.test(cloneTargetDate)
+    if (!isIsoDate) {
+      setCloneError("Please enter a valid date format: YYYY-MM-DD")
+      return
+    }
+
+    setCloneError("")
+    setCloningCardDate(cloneSourceDate)
+    try {
+      await fetch(`${API_ENDPOINTS.tasks}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: user.id,
+          date: cloneTargetDate,
+          tasks: sourceCard.tasks.map((task) => ({
+            text: task.text,
+            startTime: task.startTime,
+            endTime: task.endTime,
+            completed: false,
+            status: "todo",
+          })),
+        }),
+      })
+      await loadTasks(user.id)
+      setIsCloneModalOpen(false)
+      setCloneSourceDate(null)
+      setCloneTargetDate("")
+    } finally {
+      setCloningCardDate(null)
+    }
   }
 
   const handleKanbanStatusChange = async (taskId: string, status: KanbanStatus) => {
@@ -671,7 +727,9 @@ const calculateStreak = (cards: DayCardData[]) => {
                       onToggleTask={(taskId) => handleToggleTask(card.date, taskId)}
                       onDeleteTask={(taskId) => handleDeleteTask(card.date, taskId)}
                       onEditTask={(taskId) => handleEditTask(card.date, taskId)}
+                      onCloneCard={openCloneModal}
                       togglingTaskId={togglingTaskId}
+                      isCloning={cloningCardDate === card.date}
                     />
                   ))}
                 </div>
@@ -774,6 +832,102 @@ const calculateStreak = (cards: DayCardData[]) => {
                 </Button>
               </DialogFooter>
             </form>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {cloneSourceDate && (
+        <Dialog
+          open={isCloneModalOpen}
+          onOpenChange={(open) => {
+            setIsCloneModalOpen(open)
+            if (!open) {
+              setCloneError("")
+              setCloneTargetDate("")
+            }
+          }}
+        >
+          <DialogContent className="sm:max-w-md border-primary/20">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-primary">✨</span>
+                Clone Day Card
+              </DialogTitle>
+              <DialogDescription>
+                Copy all tasks from <span className="font-medium text-foreground">{formatDate(new Date(cloneSourceDate))}</span> to a new date.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4 py-2">
+              <div className="rounded-lg border border-primary/20 bg-primary/5 p-3">
+                <p className="text-xs text-muted-foreground">Tasks to clone</p>
+                <p className="text-sm font-semibold">
+                  {dayCards.find((card) => card.date === cloneSourceDate)?.tasks.length ?? 0} tasks
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="clone-date">Target date</Label>
+                <Input
+                  id="clone-date"
+                  type="date"
+                  value={cloneTargetDate}
+                  onChange={(e) => {
+                    setCloneTargetDate(e.target.value)
+                    if (cloneError) setCloneError("")
+                  }}
+                  disabled={cloningCardDate === cloneSourceDate}
+                />
+              </div>
+
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setCloneTargetDate(getLocalIsoDate())}
+                  disabled={cloningCardDate === cloneSourceDate}
+                >
+                  Today
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const d = new Date()
+                    d.setDate(d.getDate() + 1)
+                    setCloneTargetDate(d.toISOString().split("T")[0])
+                  }}
+                  disabled={cloningCardDate === cloneSourceDate}
+                >
+                  Tomorrow
+                </Button>
+              </div>
+
+              {cloneError && <p className="text-sm text-destructive">{cloneError}</p>}
+            </div>
+
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsCloneModalOpen(false)}
+                disabled={cloningCardDate === cloneSourceDate}
+              >
+                Cancel
+              </Button>
+              <Button type="button" onClick={handleCloneDayCard} disabled={cloningCardDate === cloneSourceDate}>
+                {cloningCardDate === cloneSourceDate ? (
+                  <>
+                    <Spinner size="sm" className="mr-2" />
+                    Cloning...
+                  </>
+                ) : (
+                  "Create Cloned Card"
+                )}
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       )}
